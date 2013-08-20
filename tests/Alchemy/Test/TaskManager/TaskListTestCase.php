@@ -1,0 +1,21 @@
+<?php
+
+namespace Alchemy\Test\TaskManager;
+
+use Alchemy\TaskManager\TaskListInterface;
+
+abstract class TaskListTestCase extends \PHPUnit_Framework_TestCase
+{
+    public function testThatRefreshReturnsAnArrayOfTaskInterface()
+    {
+        $list = $this->getTaskList();
+        foreach ($list->refresh() as $task) {
+            $this->assertInstanceOf('Alchemy\TaskManager\TaskInterface', $task);
+        }
+    }
+
+    /**
+     * @return TaskListInterface
+     */
+    abstract protected function getTaskList();
+}
