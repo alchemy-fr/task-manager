@@ -1,0 +1,79 @@
+<?php
+
+namespace Alchemy\Test\TaskManager;
+
+use Alchemy\TaskManager\LockFile;
+
+class LockFileTest extends \PHPUnit_Framework_TestCase
+{
+    private $lockfile;
+    private $lockfile2;
+
+    public function setUp()
+    {
+        $this->lockfile = __DIR__ . '/lockfiletest';
+        $this->lockfile2 = __DIR__ . '/lockfiletest2';
+
+        if (is_file($this->lockfile)) {
+            unlink($this->lockfile);
+        }
+        if (is_file($this->lockfile2)) {
+            unlink($this->lockfile2);
+        }
+    }
+
+    public function testLockALockedFileShouldThrowAnException()
+    {
+        $lock = new LockFile($this->lockfile);
+        $lock->lock();
+        $this->assertFileExists($this->lockfile);
+
+        $lock2 = new LockFile($this->lockfile);
+        $this->setExpectedException('Alchemy\TaskManager\Exception\LockFailureException', sprintf('Unable to lock %s.', $this->lockfile));
+        $lock2->lock();
+    }
+
+    public function testLockAnUnlockedFile()
+    {
+        $lock = new LockFile($this->lockfile);
+        $lock->lock();
+        $this->assertFileExists($this->lockfile);
+        $lock->unlock();
+        $this->assertFileNotExists($this->lockfile);
+
+        $lock2 = new LockFile($this->lockfile);
+        $lock2->lock();
+        $this->assertFileExists($this->lockfile);
+        $lock->unlock();
+        $this->assertFileNotExists($this->lockfile);
+    }
+
+    public function testUnlockAnUnlockedFileMakesNoProblem()
+    {
+        $lock = new LockFile($this->lockfile);
+        $lock->unlock();
+        $this->assertFileNotExists($this->lockfile);
+    }
+
+    public function testUnlockAnExistingUnlockedRemovesTheFile()
+    {
+        touch($this->lockfile);
+        $lock = new LockFile($this->lockfile);
+        $lock->unlock();
+        $this->assertFileNotExists($this->lockfile);
+    }
+
+    public function testLockTwoFilesInParallelMakesNoProblem()
+    {
+        $lock = new LockFile($this->lockfile);
+        $lock2 = new LockFile($this->lockfile2);
+        $lock->lock();
+        $lock2->lock();
+        $this->assertFileExists($this->lockfile);
+        $this->assertFileExists($this->lockfile2);
+        $lock->unlock();
+        $lock2->unlock();
+        $this->assertFileNotExists($this->lockfile);
+        $this->assertFileNotExists($this->lockfile2);
+    }
+}
