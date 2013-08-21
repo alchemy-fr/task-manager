@@ -3,6 +3,11 @@
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+if (!class_exists('Symfony\Component\Console\Application')) {
+    echo "Composer dev dependencies must be installed to run this example. Run `composer install --dev` to solve this.\n";
+    exit(1);
+}
+
 require_once __DIR__ . '/../src/RandomTask.php';
 require_once __DIR__ . '/../src/RunJobCommand.php';
 require_once __DIR__ . '/../src/RunJobTask.php';

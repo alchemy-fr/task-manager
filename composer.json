@@ -18,8 +18,6 @@
     ],
     "require": {
         "php"                      : ">=5.3.3",
-        "monolog/monolog"          : "~1.0",
-        "symfony/console"          : "dev-process-manager as 2.4.x-dev",
         "symfony/symfony"          : "dev-process-manager as 2.4.x-dev"
     },
     "repositories": [
@@ -30,8 +28,10 @@
     ],
     "minimum-stability": "dev",
     "require-dev": {
-        "phpunit/phpunit" : "~3.7",
-        "symfony/finder": "~2.1"
+        "monolog/monolog"          : "~1.0",
+        "phpunit/phpunit"          : "~3.7",
+        "symfony/console"          : "dev-process-manager as 2.4.x-dev",
+        "symfony/finder"           : "~2.1"
     },
     "autoload": {
         "psr-0": {
