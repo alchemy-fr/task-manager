@@ -446,7 +446,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job = new JobTest();
         $this->assertSame(null, $job->getSignalPeriod());
         $this->assertSame($job, $job->setSignalPeriod(42));
-        $this->assertSame(42, $job->getSignalPeriod());
+        $this->assertSame((float) 42, $job->getSignalPeriod());
     }
 
     /**
