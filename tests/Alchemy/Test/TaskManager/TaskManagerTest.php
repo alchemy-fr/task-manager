@@ -12,7 +12,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
     {
         $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'my socket');
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
-        $taskList->expects($this->any())
+        $taskList->expects($this->once())
             ->method('refresh')
             ->will($this->returnValue(array()));
         $manager = new TaskManager($socket, $this->createLoggerMock(), $taskList);
@@ -165,6 +165,44 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $data = file_get_contents($testfile);
         unlink($testfile);
         $this->assertEquals("hello\nhello\nhello\nhello\n", $data);
+    }
+
+    public function testThatRefreshIsCalledAsManyTimestheUpdateIsRequested()
+    {
+        $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'my socket');
+        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList->expects($this->exactly(7))
+            ->method('refresh')
+            ->will($this->returnValue(array()));
+        $manager = new TaskManager($socket, $this->createLoggerMock(), $taskList);
+        declare(ticks=1);
+        pcntl_alarm(1);
+        pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });
+        $start = microtime(true);
+
+        $process = new \Symfony\Component\Process\PhpProcess('<?php
+            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            use Alchemy\TaskManager\TaskManager;
+
+            usleep(100000);
+            $client = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REQ);
+            $client->connect("tcp://127.0.0.1:6660");
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+            $client->send(TaskManager::MESSAGE_PROCESS_UPDATE);
+            $message = $client->recv();
+        ');
+        $process->start();
+        $manager->start();
+        $this->assertGreaterThanOrEqual(1, microtime(true) - $start);
     }
 
     private function createLoggerMock()
