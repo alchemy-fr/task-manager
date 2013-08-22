@@ -1,8 +1,8 @@
 {
     "name": "alchemy/task-manager",
     "type": "library",
-    "description": "",
-    "keywords": [""],
+    "description": "A manager for running parallel PHP processes command line.",
+    "keywords": ["process", "cli", "parallel"],
     "license": "MIT",
     "authors": [
         {
