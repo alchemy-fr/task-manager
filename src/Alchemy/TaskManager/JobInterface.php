@@ -99,7 +99,7 @@ interface JobInterface extends LoggerAwareInterface
     public function getMaxMemory();
 
     /**
-     * Sets the period to wait for a SIGUSR1 signal otherwise the job
+     * Sets the period to wait for a SIGCONT signal otherwise the job
      * would be stopped, in case the MODE_STOP_UNLESS_SIGNAL mode is enabled.
      *
      * @param float $period
@@ -113,7 +113,7 @@ interface JobInterface extends LoggerAwareInterface
     public function setSignalPeriod($period);
 
     /**
-     * Returns the period to wait for a SIGUSR1 signal otherwise the job
+     * Returns the period to wait for a SIGCONT signal otherwise the job
      * would be stopped, in case the MODE_STOP_UNLESS_SIGNAL mode is enabled.
      *
      * @return float

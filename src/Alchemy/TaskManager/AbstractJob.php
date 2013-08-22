@@ -241,7 +241,7 @@ abstract class AbstractJob implements JobInterface
 
         declare(ticks=1);
         register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGUSR1, array($this, 'signalHandler'));
+        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
         pcntl_signal(SIGTERM, array($this, 'signalHandler'));
         pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
@@ -274,7 +274,7 @@ abstract class AbstractJob implements JobInterface
     public function signalHandler($signal)
     {
         switch ($signal) {
-            case SIGUSR1:
+            case SIGCONT:
                 $this->lastSignalTime = microtime(true);
                 break;
             case SIGTERM:

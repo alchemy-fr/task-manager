@@ -214,7 +214,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         while (microtime(true) < $end) {
             usleep($periodMilliseconds * 1000 * 2 / 3);
-            $process1->signal(SIGUSR1);
+            $process1->signal(SIGCONT);
             $this->assertTrue($process1->isRunning());
         }
 
