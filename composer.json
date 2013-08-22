@@ -18,7 +18,8 @@
     ],
     "require": {
         "php"                      : ">=5.3.3",
-        "symfony/symfony"          : "dev-process-manager as 2.4.x-dev"
+        "symfony/symfony"          : "dev-process-manager as 2.4.x-dev",
+        "ext-zmq"                  : "*"
     },
     "repositories": [
         {
