@@ -133,6 +133,40 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $manager->start();
     }
 
+    public function testASIGCONTIsRegularlyReceivedByPrograms()
+    {
+        $testfile = __DIR__ . '/testfile';
+        if (is_file($testfile)) {
+            unlink($testfile);
+        }
+        touch($testfile);
+
+        $serverScript = '<?php
+            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            '
+            .$this->getTaskImplementation().$this->getTaskListImplementation()
+            .'
+            use Alchemy\TaskManager\TaskManager;
+            use Symfony\Component\Process\Process;
+            use Symfony\Component\Process\PhpProcess;
+
+            $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
+            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<=3) { usleep(100000);\$n++;} "), 2)));
+            $logger = new \Monolog\Logger("test");
+            $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
+            $manager = new TaskManager($socket, $logger, $taskList);
+            $manager->start();
+        ';
+
+        $process = new \Symfony\Component\Process\PhpProcess($serverScript);
+        $process->start();
+        usleep(1000000);
+        $process->stop();
+        $data = file_get_contents($testfile);
+        unlink($testfile);
+        $this->assertEquals("hello\nhello\nhello\nhello\n", $data);
+    }
+
     private function createLoggerMock()
     {
         return $this->getMock('Psr\Log\LoggerInterface');
