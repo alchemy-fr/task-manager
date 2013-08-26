@@ -231,7 +231,7 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    final public function run()
+    final public function run(JobDataInterface $data = null)
     {
         $this->lockFile = new LockFile($this->getLockFilePath());
         $this->lockFile->lock();
@@ -246,7 +246,7 @@ abstract class AbstractJob implements JobInterface
         pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
         while (static::STATUS_STARTED === $this->status) {
-            $this->doRun();
+            $this->doRun($data);
             $this->pause($this->getPauseDuration());
         }
 
@@ -320,7 +320,7 @@ abstract class AbstractJob implements JobInterface
     /**
      * The actual run method to implement.
      */
-    abstract protected function doRun();
+    abstract protected function doRun(JobDataInterface $data = null);
 
     /**
      * Pauses the execution of the job for the given duration.

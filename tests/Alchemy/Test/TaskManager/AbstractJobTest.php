@@ -3,6 +3,7 @@
 namespace Alchemy\Test\TaskManager;
 
 use Alchemy\TaskManager\AbstractJob;
+use Alchemy\TaskManager\JobDataInterface;
 use Alchemy\TaskManager\JobInterface;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\PhpProcess;
@@ -33,6 +34,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
+        use Alchemy\TaskManager\JobDataInterface;
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             public function __construct()
@@ -41,7 +44,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
                 $this->setLockDirectory("' . $this->lockDir . '");
             }
 
-            protected function doRun()
+            protected function doRun(JobDataInterface $data = null)
             {
                 $n = 0;
                 declare(ticks=1);
@@ -63,6 +66,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
+        use Alchemy\TaskManager\JobDataInterface;
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             private $data;
@@ -74,7 +79,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
                     $this->setMaxMemory(10*1024*1024);
             }
 
-            protected function doRun()
+            protected function doRun(JobDataInterface $data = null)
             {
             declare(ticks=1);
                 '.$extra.'
@@ -235,6 +240,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
+        use Alchemy\TaskManager\JobDataInterface;
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             private $data;
@@ -245,7 +252,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
                 $this->setLockDirectory("' . $this->lockDir . '");
             }
 
-            protected function doRun()
+            protected function doRun(JobDataInterface $data = null)
             {
             }
 
@@ -278,6 +285,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
+        use Alchemy\TaskManager\JobDataInterface;
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             private $data;
@@ -288,7 +297,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
                 $this->setLockDirectory("' . $this->lockDir . '");
             }
 
-            protected function doRun()
+            protected function doRun(JobDataInterface $data = null)
             {
                 echo "loop\n";
             }
@@ -464,14 +473,41 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     {
         return array(array(0), array(-2));
     }
+
+    public function testDataIsPassedToDoRun()
+    {
+        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+
+        $job = new JobTest();
+        $job->setId('Id');
+        $job->enableStopMode(JobTest::MODE_STOP_ON_DURATION);
+        $job->setMaxDuration(0.1);
+        $job->run($data);
+
+        $this->assertSame($data, $job->getData());
+    }
+
+    public function testDoRunWithoutdataIsOk()
+    {
+        $job = new JobTest();
+        $job->setId('Id');
+        $job->enableStopMode(JobTest::MODE_STOP_ON_DURATION);
+        $job->setMaxDuration(0.1);
+        $job->run();
+    }
 }
 
 class JobTest extends AbstractJob
 {
-    protected function doRun($execution = null)
+    private $data;
+
+    public function getData()
     {
-        if (is_callable($execution)) {
-            return call_user_func($execution);
-        }
+        return $this->data;
+    }
+
+    protected function doRun(JobDataInterface $data = null)
+    {
+        $this->data = $data;
     }
 }
