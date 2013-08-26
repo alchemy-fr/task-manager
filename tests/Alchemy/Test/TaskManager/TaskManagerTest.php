@@ -40,9 +40,9 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .'
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\TaskManager\ZMQSocket;
-            use Symfony\Component\Process\Process;
+            use Symfony\Component\Process\PhpProcess;
 
-            $taskList = new TaskList(array(new Task("task 1", new Process("echo \"hello\" >> '.$testfile.'"), 3)));
+            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php file_put_contents(\''.$testfile.'\', \'hello\n\', FILE_APPEND);"), 3)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
             $manager = TaskManager::create($logger, $taskList);
@@ -51,7 +51,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
 
         $process = new PhpProcess($serverScript);
         $process->start();
-        usleep(1000000);
+        usleep(600000);
         $process->stop();
         $data = file_get_contents($testfile);
         unlink($testfile);
@@ -150,7 +150,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             use Symfony\Component\Process\Process;
             use Symfony\Component\Process\PhpProcess;
 
-            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<=3) { usleep(100000);\$n++;} "), 2)));
+            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<3) { usleep(100000);\$n++;} "), 2)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
             $manager = TaskManager::create($logger, $taskList);
@@ -163,7 +163,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $process->stop();
         $data = file_get_contents($testfile);
         unlink($testfile);
-        $this->assertEquals("hello\nhello\nhello\nhello\n", $data);
+        $this->assertContains("hello\nhello\nhello\nhello\n", $data);
     }
 
     public function testThatRefreshIsCalledAsManyTimestheUpdateIsRequested()

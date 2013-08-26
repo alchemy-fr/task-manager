@@ -171,7 +171,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $duration = microtime(true) - $start;
 
-        $this->assertLessThan(0.15, abs($expectedDuration-$duration));
+        $this->assertLessThan(0.20, abs($expectedDuration-$duration));
     }
 
     public function provideVariousMemoryValues()
@@ -197,7 +197,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $duration = microtime(true) - $start;
 
-        $this->assertLessThan(0.1, abs($max-$duration));
+        $this->assertLessThan(0.2, abs($max-$duration));
     }
 
     public function provideVariousDurationValues()
@@ -319,7 +319,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $process = new PhpProcess($script);
 
         $process->start();
-        usleep(500000);
+        usleep(550000);
         $process->stop();
         $this->assertFalse($process->isRunning());
         $this->assertEquals("loop\nloop\nloop\nloop\nloop\n", $process->getOutput());
