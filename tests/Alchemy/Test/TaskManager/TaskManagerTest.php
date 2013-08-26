@@ -2,20 +2,21 @@
 
 namespace Alchemy\Test\TaskManager;
 
+use Alchemy\TaskManager\ZMQSocket;
 use Alchemy\TaskManager\TaskInterface;
 use Alchemy\TaskManager\TaskListInterface;
 use Alchemy\TaskManager\TaskManager;
+use Symfony\Component\Process\PhpProcess;
 
 class TaskManagerTest extends \PHPUnit_Framework_TestCase
 {
     public function testThatItRunsWithoutAnyProcesses()
     {
-        $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'my socket');
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
         $taskList->expects($this->once())
             ->method('refresh')
             ->will($this->returnValue(array()));
-        $manager = new TaskManager($socket, $this->createLoggerMock(), $taskList);
+        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
         declare(ticks=1);
         pcntl_alarm(1);
         pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });
@@ -38,19 +39,19 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
             use Alchemy\TaskManager\TaskManager;
+            use Alchemy\TaskManager\ZMQSocket;
             use Symfony\Component\Process\Process;
 
-            $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
             $taskList = new TaskList(array(new Task("task 1", new Process("echo \"hello\" >> '.$testfile.'"), 3)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = new TaskManager($socket, $logger, $taskList);
+            $manager = TaskManager::create($logger, $taskList);
             $manager->start();
         ';
 
-        $process = new \Symfony\Component\Process\PhpProcess($serverScript);
+        $process = new PhpProcess($serverScript);
         $process->start();
-        usleep(700000);
+        usleep(1000000);
         $process->stop();
         $data = file_get_contents($testfile);
         unlink($testfile);
@@ -65,19 +66,19 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
             use Alchemy\TaskManager\TaskManager;
+            use Alchemy\TaskManager\ZMQSocket;
 
-            $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
             $taskList = new TaskList(array());
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = new TaskManager($socket, $logger, $taskList);
+            $manager = TaskManager::create($logger, $taskList);
             $manager->start();
         ';
 
-        $server = new \Symfony\Component\Process\PhpProcess($serverScript);
+        $server = new PhpProcess($serverScript);
         $server->start();
 
-        $process = new \Symfony\Component\Process\PhpProcess('<?php
+        $process = new PhpProcess('<?php
             require "'.__DIR__.'/../../../../vendor/autoload.php";
             use Alchemy\TaskManager\TaskManager;
 
@@ -101,15 +102,14 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .'
             use Alchemy\TaskManager\TaskManager;
 
-            $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
             $taskList = new TaskList(array());
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = new TaskManager($socket, $logger, $taskList);
+            $manager = TaskManager::create($logger, $taskList);
             $manager->start();
         ';
 
-        $server = new \Symfony\Component\Process\PhpProcess($serverScript);
+        $server = new PhpProcess($serverScript);
         $this->assertFalse($server->isRunning());
         $server->start();
         $this->assertTrue($server->isRunning());
@@ -123,13 +123,13 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testThatTwoTaskManagerCanNotRunOnSamePortAndHostAtTheSameTime()
     {
-        $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
-        $socket->bind('tcp://127.0.0.1:6660');
+        $ZMQsocket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
+        $socket = new ZMQSocket($ZMQsocket, 'tcp', '127.0.0.1', 6660);
+        $socket->bind();
 
-        $socket2 = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
-        $manager = new TaskManager($socket2, $this->createLoggerMock(), $taskList);
-        $this->setExpectedException('Alchemy\TaskManager\Exception\RuntimeException', 'Unable to bind ZMQ socket');
+        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
+        $this->setExpectedException('Alchemy\TaskManager\Exception\RuntimeException', 'Unable to bind socket to tcp://127.0.0.1:6660. Is another one already bound ?');
         $manager->start();
     }
 
@@ -150,15 +150,14 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             use Symfony\Component\Process\Process;
             use Symfony\Component\Process\PhpProcess;
 
-            $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
             $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<=3) { usleep(100000);\$n++;} "), 2)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = new TaskManager($socket, $logger, $taskList);
+            $manager = TaskManager::create($logger, $taskList);
             $manager->start();
         ';
 
-        $process = new \Symfony\Component\Process\PhpProcess($serverScript);
+        $process = new PhpProcess($serverScript);
         $process->start();
         usleep(1000000);
         $process->stop();
@@ -169,18 +168,17 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testThatRefreshIsCalledAsManyTimestheUpdateIsRequested()
     {
-        $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'my socket');
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
         $taskList->expects($this->exactly(7))
             ->method('refresh')
             ->will($this->returnValue(array()));
-        $manager = new TaskManager($socket, $this->createLoggerMock(), $taskList);
+        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
         declare(ticks=1);
         pcntl_alarm(1);
         pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });
         $start = microtime(true);
 
-        $process = new \Symfony\Component\Process\PhpProcess('<?php
+        $process = new PhpProcess('<?php
             require "'.__DIR__.'/../../../../vendor/autoload.php";
             use Alchemy\TaskManager\TaskManager;
 

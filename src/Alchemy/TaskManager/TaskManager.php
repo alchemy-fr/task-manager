@@ -11,7 +11,6 @@
 
 namespace Alchemy\TaskManager;
 
-use Alchemy\TaskManager\Exception\RuntimeException;
 use Symfony\Component\Process\Manager\ProcessManager;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
@@ -32,16 +31,20 @@ class TaskManager implements LoggerAwareInterface
     private $list;
     /** @var ProcessManager */
     private $manager;
-    /** @var \ZMQSocket */
-    private $socket;
-    /** @var string */
-    private $dsn;
+    /** @var ZMQSocket */
+    private $listener;
+    /** @var ZMQSocket */
+    private $publisher;
 
-    public function __construct(\ZMQSocket $socket, LoggerInterface $logger, TaskListInterface $list)
+    private $lockFile;
+    private $lockDir;
+
+    public function __construct(ZMQSocket $listener, ZMQSocket $publisher, LoggerInterface $logger, TaskListInterface $list)
     {
         $this->list = $list;
         $this->logger = $logger;
-        $this->socket = $socket;
+        $this->listener = $listener;
+        $this->publisher = $publisher;
         $this->manager = new ProcessManager($logger, null, ProcessManager::STRATEGY_IGNORE, ProcessManager::STRATEGY_IGNORE);
     }
 
@@ -74,6 +77,29 @@ class TaskManager implements LoggerAwareInterface
         return $this;
     }
 
+    public function getLockDirectory()
+    {
+        if (null === $this->lockDir) {
+            return sys_get_temp_dir();
+        }
+
+        return $this->lockDir;
+    }
+
+    public function setLockDirectory($directory)
+    {
+        if (!is_dir($directory)) {
+            throw new InvalidArgumentException('%s does not seem to be a directory.');
+        }
+        if (!is_writable($directory)) {
+            throw new InvalidArgumentException('%s does not seem to be writeable.');
+        }
+
+        $this->lockDir = rtrim($directory, DIRECTORY_SEPARATOR);
+
+        return $this;
+    }
+
     /**
      * Starts the task manager, opens a listener on the given host and port.
      *
@@ -82,15 +108,11 @@ class TaskManager implements LoggerAwareInterface
      *
      * @return TaskManager
      */
-    public function start($host = '127.0.0.1', $port = 6660)
+    public function start()
     {
-        $this->dsn = "tcp://$host:$port";
-        try {
-            $this->socket->bind($this->dsn);
-        } catch (\ZMQSocketException $e) {
-            $this->log('error', sprintf('Unable to bind ZMQ socket : %s', $e->getMessage()));
-            throw new RuntimeException('Unable to bind ZMQ socket', $e->getCode(), $e);
-        }
+        $this->listener->bind();
+        $this->publisher->bind();
+
         $this->manager->setDaemon(true);
         $this->updateProcesses();
         $this->manager->start();
@@ -120,35 +142,54 @@ class TaskManager implements LoggerAwareInterface
             $this->logger->notice("Stopping process manager ...");
             $this->manager->stop($timeout, $signal);
         }
-        if (null !== $this->socket && null !== $this->dsn) {
-            $this->logger->notice("Unbinding socket $this->dsn ...");
-            try {
-                $this->socket->unbind($this->dsn);
-            } catch (\ZMQSocketException $e) {
-                $this->log('error', sprintf('Unable to unbind ZMQ socket : %s', $e->getMessage()));
-            }
-            $this->dsn = null;
-            $this->socket = null;
+        if ($this->listener->isBound()) {
+            $this->listener->unbind();
+        }
+        if ($this->publisher->isBound()) {
+            $this->publisher->unbind();
+        }
+        if (null !== $this->lockFile) {
+            $this->lockFile->unlock();
         }
 
         return $this;
     }
 
     /**
-     * Logs a message
+     * Creates a taskManager.
      *
-     * @param string $method  A valid LoggerInterface method
-     * @param string $message The message to be logged
-     *
+     * @param LoggerInterface $logger
+     * @param TaskListInterface $list
+     * @param array $options
+     * 
      * @return TaskManager
      */
-    private function log($method, $message)
+    public static function create(LoggerInterface $logger, TaskListInterface $list, array $options = array())
     {
-        if ($this->logger) {
-            call_user_func(array($this->logger, $method), $message);
-        }
+        $options = array_replace(array(
+            'listener_protocol'  => 'tcp',
+            'listener_host'      => '127.0.0.1',
+            'listener_port'      => 6660,
+            'publisher_protocol' => 'tcp',
+            'publisher_host'     => '127.0.0.1',
+            'publisher_port'     => 6661,
+        ), $options);
 
-        return $this;
+        $context = new \ZMQContext();
+        $listener = new ZMQSocket(
+            $context->getSocket(\ZMQ::SOCKET_REP),
+            $options['listener_protocol'],
+            $options['listener_host'],
+            $options['listener_port']
+        );
+        $publisher = new ZMQSocket(
+            $context->getSocket(\ZMQ::SOCKET_PUB),
+            $options['publisher_protocol'],
+            $options['publisher_host'],
+            $options['publisher_port']
+        );
+
+        return new TaskManager($listener, $publisher, $logger, $list);
     }
 
     /**
@@ -179,7 +220,7 @@ class TaskManager implements LoggerAwareInterface
      */
     private function poll()
     {
-        while (false !== $message = $this->socket->recv(\ZMQ::MODE_NOBLOCK)) {
+        while (false !== $message = $this->listener->recv(\ZMQ::MODE_NOBLOCK)) {
             switch ($message) {
                 case static::MESSAGE_PING:
                     $this->logger->debug(sprintf('Received message "%s"', $message));
@@ -200,7 +241,7 @@ class TaskManager implements LoggerAwareInterface
                     $recv = static::RESPONSE_INVALID_MESSAGE;
                     break;
             }
-            $this->socket->send($recv);
+            $this->listener->send($recv);
             usleep(1000);
         }
     }
