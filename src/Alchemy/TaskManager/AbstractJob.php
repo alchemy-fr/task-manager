@@ -42,9 +42,10 @@ abstract class AbstractJob implements JobInterface
 
     public function __destruct()
     {
-        if ($this->isRunning() && null !== $this->lockFile) {
+        if (null !== $this->lockFile) {
             $this->lockFile->unlock();
         }
+        unregister_tick_function(array($this, 'tickHandler'));
     }
 
     /**
@@ -250,6 +251,7 @@ abstract class AbstractJob implements JobInterface
             $this->pause($this->getPauseDuration());
         }
 
+        unregister_tick_function(array($this, 'tickHandler'));
         $this->lockFile->unlock();
         $this->status = static::STATUS_STOPPED;
 
