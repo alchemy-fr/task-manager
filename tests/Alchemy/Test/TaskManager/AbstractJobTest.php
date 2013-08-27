@@ -407,7 +407,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testMaxMemoryGettersAndSetters()
     {
         $job = new JobTest();
-        $this->assertSame(null, $job->getMaxMemory());
+        $this->assertSame(32E6, $job->getMaxMemory());
         $this->assertSame($job, $job->setMaxMemory(2048));
         $this->assertSame(2048, $job->getMaxMemory());
     }
@@ -431,7 +431,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testMaxDurationGettersAndSetters()
     {
         $job = new JobTest();
-        $this->assertSame(null, $job->getMaxDuration());
+        $this->assertSame(0, $job->getMaxDuration());
         $this->assertSame($job, $job->setMaxDuration(24));
         $this->assertSame((float) 24, $job->getMaxDuration());
     }
@@ -455,7 +455,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testSignalPeriodGettersAndSetters()
     {
         $job = new JobTest();
-        $this->assertSame(null, $job->getSignalPeriod());
+        $this->assertSame(0.5, $job->getSignalPeriod());
         $this->assertSame($job, $job->setSignalPeriod(42));
         $this->assertSame((float) 42, $job->getSignalPeriod());
     }

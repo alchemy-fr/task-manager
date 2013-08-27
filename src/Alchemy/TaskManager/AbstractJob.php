@@ -24,11 +24,11 @@ abstract class AbstractJob implements JobInterface
     /** @var null|float */
     private $startTime = null;
     /** @var null|float */
-    private $maxDuration;
+    private $maxDuration = 0;
     /** @var null|float */
-    private $signalPeriod;
+    private $signalPeriod = 0.5;
     /** @var null|integer */
-    private $maxMemory;
+    private $maxMemory = 32E6;
     /** @var integer */
     private $mode = 0;
     /** @var null|string */
