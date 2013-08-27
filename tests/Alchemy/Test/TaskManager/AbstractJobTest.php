@@ -171,7 +171,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $duration = microtime(true) - $start;
 
-        $this->assertLessThan(0.20, abs($expectedDuration-$duration));
+        $this->assertLessThan(0.30, abs($expectedDuration-$duration));
     }
 
     public function provideVariousMemoryValues()
