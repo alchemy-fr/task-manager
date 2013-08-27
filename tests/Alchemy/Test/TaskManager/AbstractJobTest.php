@@ -230,8 +230,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function provideVariousPeriods()
     {
         return array(
-            array(100),
-            array(300),
+            array(150),
+            array(450),
         );
     }
 
@@ -473,7 +473,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
     public function provideInvalidSignalPeriodValues()
     {
-        return array(array(0), array(-2));
+        return array(array(0), array(-2), array(0.14));
     }
 
     public function testDataIsPassedToDoRun()

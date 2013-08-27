@@ -206,8 +206,9 @@ abstract class AbstractJob implements JobInterface
      */
     public function setSignalPeriod($period)
     {
-        if (0 >= $period) {
-            throw new InvalidArgumentException('Signal period should be a positive value.');
+        // use 3x the step used for pause
+        if (0.15 > $period) {
+            throw new InvalidArgumentException('Signal period should be greater than 0.15 s.');
         }
 
         $this->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
@@ -319,7 +320,7 @@ abstract class AbstractJob implements JobInterface
      */
     protected function getPauseDuration()
     {
-        return 0;
+        return 0.005;
     }
 
     /**
@@ -342,7 +343,8 @@ abstract class AbstractJob implements JobInterface
             if (static::STATUS_STARTED !== $this->status) {
                 return $this;
             }
-            usleep(1000);
+            // 50 ms is a good compromise between performance and reactivity
+            usleep(50000);
         }
 
         return $this;
