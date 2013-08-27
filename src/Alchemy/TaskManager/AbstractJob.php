@@ -360,6 +360,9 @@ abstract class AbstractJob implements JobInterface
         if (!$this->isStopMode(static::MODE_STOP_UNLESS_SIGNAL)) {
             return;
         }
+        if (static::STATUS_STARTED !== $this->status) {
+            return;
+        }
 
         if (null === $this->lastSignalTime) {
             if ((microtime(true) - $this->startTime) > $this->signalPeriod) {
@@ -380,6 +383,9 @@ abstract class AbstractJob implements JobInterface
         if (!$this->isStopMode(static::MODE_STOP_ON_MEMORY) || null === $this->maxMemory) {
             return;
         }
+        if (static::STATUS_STARTED !== $this->status) {
+            return;
+        }
 
         if (memory_get_usage() > $this->maxMemory) {
             $this->stop();
@@ -394,6 +400,9 @@ abstract class AbstractJob implements JobInterface
     private function checkDuration()
     {
         if (!$this->isStopMode(static::MODE_STOP_ON_DURATION) || null === $this->maxDuration) {
+            return;
+        }
+        if (static::STATUS_STARTED !== $this->status) {
             return;
         }
 
