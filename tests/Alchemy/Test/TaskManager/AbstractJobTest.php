@@ -497,6 +497,22 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->setMaxDuration(0.1);
         $job->run();
     }
+
+    public function testThatSettingAStopParameterEnablesTheStopMode()
+    {
+        $job = new JobTest();
+        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
+        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
+        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_ON_MEMORY));
+        $job->setMaxDuration(3);
+        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
+        $job->disableStopMode(JobTest::MODE_STOP_ON_DURATION);
+        $job->setMaxMemory(34E6);
+        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_ON_MEMORY));
+        $job->disableStopMode(JobTest::MODE_STOP_ON_MEMORY);
+        $job->setSignalPeriod(2);
+        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
+    }
 }
 
 class JobTest extends AbstractJob

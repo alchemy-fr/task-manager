@@ -164,6 +164,7 @@ abstract class AbstractJob implements JobInterface
             throw new InvalidArgumentException('Maximum duration should be a positive value.');
         }
 
+        $this->enableStopMode(static::MODE_STOP_ON_DURATION);
         $this->maxDuration = (float) $duration;
 
         return $this;
@@ -186,6 +187,7 @@ abstract class AbstractJob implements JobInterface
             throw new InvalidArgumentException('Maximum memory should be a positive value.');
         }
 
+        $this->enableStopMode(static::MODE_STOP_ON_MEMORY);
         $this->maxMemory = (integer) $memory;
 
         return $this;
@@ -208,6 +210,7 @@ abstract class AbstractJob implements JobInterface
             throw new InvalidArgumentException('Signal period should be a positive value.');
         }
 
+        $this->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
         $this->signalPeriod = (float) $period;
 
         return $this;
