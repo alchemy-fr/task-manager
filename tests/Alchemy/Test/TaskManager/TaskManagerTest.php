@@ -6,7 +6,7 @@ use Alchemy\TaskManager\ZMQSocket;
 use Alchemy\TaskManager\TaskInterface;
 use Alchemy\TaskManager\TaskListInterface;
 use Alchemy\TaskManager\TaskManager;
-use Symfony\Component\Process\PhpProcess;
+use Alchemy\Test\TaskManager\PhpProcess;
 
 class TaskManagerTest extends \PHPUnit_Framework_TestCase
 {
@@ -34,13 +34,13 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         touch($testfile);
 
         $serverScript = '<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             '
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\TaskManager\ZMQSocket;
-            use Symfony\Component\Process\PhpProcess;
+            use Alchemy\Test\TaskManager\PhpProcess;
 
             $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php file_put_contents(\''.$testfile.'\', \'hello\n\', FILE_APPEND);"), 3)));
             $logger = new \Monolog\Logger("test");
@@ -61,7 +61,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
     public function testThatItRespondstoPingCommand()
     {
         $serverScript = '<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             '
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
@@ -79,7 +79,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $server->start();
 
         $process = new PhpProcess('<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             use Alchemy\TaskManager\TaskManager;
 
             $client = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REQ);
@@ -96,7 +96,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
     public function testMultipleStartsAndStops()
     {
         $serverScript = '<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             '
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
@@ -123,8 +123,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
 
     public function testThatTwoTaskManagerCanNotRunOnSamePortAndHostAtTheSameTime()
     {
-        $ZMQsocket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
-        $socket = new ZMQSocket($ZMQsocket, 'tcp', '127.0.0.1', 6660);
+        $socket = new ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'tcp', '127.0.0.1', 6660);
         $socket->bind();
 
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
@@ -142,13 +141,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         touch($testfile);
 
         $serverScript = '<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             '
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
             use Alchemy\TaskManager\TaskManager;
-            use Symfony\Component\Process\Process;
-            use Symfony\Component\Process\PhpProcess;
+            use Alchemy\Test\TaskManager\PhpProcess;
 
             $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<3) { usleep(100000);\$n++;} "), 2)));
             $logger = new \Monolog\Logger("test");
@@ -179,7 +177,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $start = microtime(true);
 
         $process = new PhpProcess('<?php
-            require "'.__DIR__.'/../../../../vendor/autoload.php";
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
             use Alchemy\TaskManager\TaskManager;
 
             usleep(100000);

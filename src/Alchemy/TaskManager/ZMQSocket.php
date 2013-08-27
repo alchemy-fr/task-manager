@@ -15,15 +15,19 @@ use Alchemy\TaskManager\Exception\RuntimeException;
 
 class ZMQSocket
 {
+    private $context;
     private $socket;
+    private $type;
     private $protocol;
     private $host;
     private $port;
     private $bound = false;
 
-    public function __construct(\ZMQSocket $socket, $protocol, $host, $port)
+    public function __construct(\ZMQContext $context, $type, $protocol, $host, $port)
     {
-        $this->socket = $socket;
+        $this->context = $context;
+        $this->type = $type;
+        $this->socket = $context->getSocket($type);
         $this->protocol = $protocol;
         $this->host = $host;
         $this->port = $port;
@@ -42,10 +46,15 @@ class ZMQSocket
     public function unbind()
     {
         try {
-            $this->socket->unbind("$this->protocol://$this->host:$this->port");
+            // this method does not exist on older versions
+            if (method_exists($this->socket, 'unbind')) {
+                $this->socket->unbind("$this->protocol://$this->host:$this->port");
+            }
         } catch (\ZMQSocketException $e) {
             throw new RuntimeException("Unable to unbind socket on $this->protocol://$this->host:$this->port.", $e->getCode(), $e);
         }
+        unset($this->socket);
+        $this->socket = $this->context->getSocket($this->type);
         $this->bound = false;
     }
 

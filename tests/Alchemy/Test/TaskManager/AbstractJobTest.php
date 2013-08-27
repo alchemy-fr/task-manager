@@ -5,8 +5,8 @@ namespace Alchemy\Test\TaskManager;
 use Alchemy\TaskManager\AbstractJob;
 use Alchemy\TaskManager\JobDataInterface;
 use Alchemy\TaskManager\JobInterface;
+use Alchemy\Test\TaskManager\PhpProcess;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Process\PhpProcess;
 
 class AbstractJobTest extends \PHPUnit_Framework_TestCase
 {
@@ -322,7 +322,9 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         usleep(550000);
         $process->stop();
         $this->assertFalse($process->isRunning());
-        $this->assertEquals("loop\nloop\nloop\nloop\nloop\n", $process->getOutput());
+        $loops = count(explode("loop\n", $process->getOutput()));
+        $this->assertGreaterThanOrEqual(6, $loops);
+        $this->assertLessThanOrEqual(7, $loops);
     }
 
     public function testLockDirectoryGettersAndSetters()

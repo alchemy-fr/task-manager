@@ -177,13 +177,13 @@ class TaskManager implements LoggerAwareInterface
 
         $context = new \ZMQContext();
         $listener = new ZMQSocket(
-            $context->getSocket(\ZMQ::SOCKET_REP),
+            $context, \ZMQ::SOCKET_REP,
             $options['listener_protocol'],
             $options['listener_host'],
             $options['listener_port']
         );
         $publisher = new ZMQSocket(
-            $context->getSocket(\ZMQ::SOCKET_PUB),
+            $context, \ZMQ::SOCKET_PUB,
             $options['publisher_protocol'],
             $options['publisher_host'],
             $options['publisher_port']
