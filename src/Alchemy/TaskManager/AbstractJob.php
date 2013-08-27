@@ -284,7 +284,11 @@ abstract class AbstractJob implements JobInterface
                 $this->lastSignalTime = microtime(true);
                 break;
             case SIGTERM:
+                $this->log('info', 'Caught SIGTERM signal, stopping');
+                $this->stop();
+                break;
             case SIGINT:
+                $this->log('info', 'Caught SIGINT signal, stopping');
                 $this->stop();
                 break;
         }
@@ -366,9 +370,11 @@ abstract class AbstractJob implements JobInterface
 
         if (null === $this->lastSignalTime) {
             if ((microtime(true) - $this->startTime) > $this->signalPeriod) {
+                $this->log('debug', sprintf('No signal received since start-time (max period is %s s.), stopping.', $this->signalPeriod));
                 $this->stop();
             }
         } elseif ((microtime(true) - $this->lastSignalTime) > $this->signalPeriod) {
+            $this->log('debug', sprintf('No signal received since %s, (max period is %s s.), stopping.', (microtime(true) - $this->lastSignalTime), $this->signalPeriod));
             $this->stop();
         }
     }
@@ -388,6 +394,7 @@ abstract class AbstractJob implements JobInterface
         }
 
         if (memory_get_usage() > $this->maxMemory) {
+            $this->log('debug', sprintf('Max memory reached (%d o.), stopping.', $this->maxMemory));
             $this->stop();
         }
     }
@@ -407,6 +414,7 @@ abstract class AbstractJob implements JobInterface
         }
 
         if ((microtime(true) - $this->startTime) > $this->maxDuration) {
+            $this->log('debug', sprintf('Max duration reached (%d s.), stopping.', $this->maxDuration));
             $this->stop();
         }
     }
