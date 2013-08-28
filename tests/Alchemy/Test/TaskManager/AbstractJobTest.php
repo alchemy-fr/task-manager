@@ -413,7 +413,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider provideInvalidSignalPeriodValues
+     * @dataProvider provideInvalidMemoryValues
      * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
      * @expectedExceptionMessage Maximum memory should be a positive value.
      */
@@ -437,7 +437,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @dataProvider provideInvalidSignalPeriodValues
+     * @dataProvider provideInvalidDurationValues
      * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
      * @expectedExceptionMessage Maximum duration should be a positive value.
      */
@@ -463,7 +463,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     /**
      * @dataProvider provideInvalidSignalPeriodValues
      * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Signal period should be a positive value.
+     * @expectedExceptionMessage Signal period should be greater than 0.15 s.
      */
     public function testInvalidSignalPeriod($period)
     {
