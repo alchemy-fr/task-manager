@@ -58,7 +58,7 @@ class LockFile
 
         $locker = true;
 
-        if (flock($this->handle, LOCK_EX | LOCK_NB, $locker) === FALSE) {
+        if (false === flock($this->handle, LOCK_EX | LOCK_NB, $locker)) {
             fclose($this->handle);
             throw new LockFailureException(sprintf('Unable to lock %s.', $this->file));
         }

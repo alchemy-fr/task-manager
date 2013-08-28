@@ -158,10 +158,10 @@ class TaskManager implements LoggerAwareInterface
     /**
      * Creates a taskManager.
      *
-     * @param LoggerInterface $logger
+     * @param LoggerInterface   $logger
      * @param TaskListInterface $list
-     * @param array $options
-     * 
+     * @param array             $options
+     *
      * @return TaskManager
      */
     public static function create(LoggerInterface $logger, TaskListInterface $list, array $options = array())
