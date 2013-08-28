@@ -513,6 +513,22 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->setSignalPeriod(2);
         $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
     }
+
+    public function testFailureCanBeReset()
+    {
+        $job = new JobFailureTest();
+        $job->setId('failure-id');
+        try {
+            $job->run();
+            $this->fail('A JobFailureException should have been raised');
+        } catch (JobFailureException $e) {
+
+        }
+        $job = new JobFailureTest();
+        $job->setId('failure-id');
+        $this->setExpectedException('Alchemy\Test\TaskManager\JobFailureException', 'Total failure.');
+        $job->run();
+    }
 }
 
 class JobTest extends AbstractJob
@@ -529,3 +545,17 @@ class JobTest extends AbstractJob
         $this->data = $data;
     }
 }
+
+class JobFailureTest extends AbstractJob
+{
+    protected function doRun(JobDataInterface $data = null)
+    {
+        $this->finish();
+        throw new JobFailureException('Total failure.');
+    }
+}
+
+class JobFailureException extends \Exception
+{
+}
+

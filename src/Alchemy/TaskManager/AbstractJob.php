@@ -42,10 +42,7 @@ abstract class AbstractJob implements JobInterface
 
     public function __destruct()
     {
-        if (null !== $this->lockFile) {
-            $this->lockFile->unlock();
-        }
-        unregister_tick_function(array($this, 'tickHandler'));
+        $this->finish();
     }
 
     /**
@@ -255,9 +252,7 @@ abstract class AbstractJob implements JobInterface
             $this->pause($this->getPauseDuration());
         }
 
-        unregister_tick_function(array($this, 'tickHandler'));
-        $this->lockFile->unlock();
-        $this->status = static::STATUS_STOPPED;
+        $this->finish();
 
         return $this;
     }
@@ -302,6 +297,25 @@ abstract class AbstractJob implements JobInterface
         $this->checkDuration();
         $this->checkSignals();
         $this->checkMemory();
+    }
+
+    /**
+     * Finishes a job.
+     *
+     * In case of failure, his method must be called to cleanup internals.
+     *
+     *
+     * @return JobInterface
+     */
+    protected function finish()
+    {
+        if (null !== $this->lockFile) {
+            $this->lockFile->unlock();
+        }
+        unregister_tick_function(array($this, 'tickHandler'));
+        $this->status = static::STATUS_STOPPED;
+
+        return $this;
     }
 
     /**
