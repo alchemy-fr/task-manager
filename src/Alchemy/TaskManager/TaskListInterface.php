@@ -17,7 +17,7 @@ interface TaskListInterface
      * Returns an up-to-date array of TaskInterface that should be synced by
      * the TaskManager.
      *
-     * @return array
+     * @return TaskInterface[]
      */
     public function refresh();
 }
