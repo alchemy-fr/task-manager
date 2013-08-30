@@ -1,6 +1,6 @@
 <?php
 
-namespace Alchemy\Test\TaskManager;
+namespace Alchemy\TaskManager\Test;
 
 use Alchemy\TaskManager\TaskListInterface;
 
