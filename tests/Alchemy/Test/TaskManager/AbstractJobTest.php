@@ -527,7 +527,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
     }
 
-    public function testFailureCanBeReset()
+    public function testJobCanBeRestartedAfterAFailure()
     {
         $job = new JobFailureTest();
         $job->setId('failure-id');
