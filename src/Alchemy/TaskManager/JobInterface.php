@@ -215,12 +215,33 @@ interface JobInterface extends LoggerAwareInterface
 
     /**
      * Checks if the job is running.
+     * 
+     * Please note that a stopping job is considered running. To check if the
+     * status is exactly in the started status, use the isStarted method.
      *
      * @return Boolean
      *
      * @api
      */
     public function isRunning();
+
+    /**
+     * Checks if the job is stopping.
+     *
+     * @return Boolean
+     *
+     * @api
+     */
+    public function isStopping();
+
+    /**
+     * Checks if the job is started.
+     *
+     * @return Boolean
+     *
+     * @api
+     */
+    public function isStarted();
 
     /**
      * Gets the current status of the job, one of the STATUS_* constant.

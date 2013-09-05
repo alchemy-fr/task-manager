@@ -221,7 +221,23 @@ abstract class AbstractJob implements JobInterface
     {
         return in_array($this->status, array(static::STATUS_STARTED, static::STATUS_STOPPING), true);
     }
-
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function isStopping()
+    {
+        return static::STATUS_STOPPING === $this->status;
+    }
+    
+    /**
+     * {@inheritdoc}
+     */
+    public function isStarted()
+    {
+        return static::STATUS_STARTED === $this->status;
+    }
+    
     /**
      * {@inheritdoc}
      */
