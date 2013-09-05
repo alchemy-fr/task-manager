@@ -381,7 +381,7 @@ abstract class AbstractJob implements JobInterface
      *
      * @return JobInterface
      */
-    private function pause($duration)
+    protected function pause($duration)
     {
         $time = microtime(true) + $duration;
 
