@@ -196,11 +196,13 @@ interface JobInterface extends LoggerAwareInterface
     /**
      * Runs the job.
      *
+     * @param JobDataInterface $data
+     *
      * @return JobInterface
      *
      * @api
      */
-    public function run();
+    public function run(JobDataInterface $data = null);
 
     /**
      * Checks if the job is running.
