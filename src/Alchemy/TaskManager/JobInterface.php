@@ -205,6 +205,15 @@ interface JobInterface extends LoggerAwareInterface
     public function run(JobDataInterface $data = null);
 
     /**
+     * Runs the job implementation a single time.
+     *
+     * @param JobDataInterface $data
+     *
+     * @return AbstractJob
+     */
+    public function singleRun(JobDataInterface $data = null);
+
+    /**
      * Checks if the job is running.
      *
      * @return Boolean

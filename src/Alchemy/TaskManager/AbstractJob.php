@@ -258,6 +258,34 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
+     * Runs the job implementation a single time.
+     *
+     * @param JobDataInterface $data
+     *
+     * @return AbstractJob
+     */
+    final public function singleRun(JobDataInterface $data = null)
+    {
+        $this->lockFile = new LockFile($this->getLockFilePath());
+        $this->lockFile->lock();
+
+        $this->status = static::STATUS_STARTED;
+        $this->startTime = microtime(true);
+
+        declare(ticks=1);
+        register_tick_function(array($this, 'tickHandler'), true);
+        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
+        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
+        pcntl_signal(SIGINT, array($this, 'signalHandler'));
+
+        $this->doRun($data);
+
+        $this->finish();
+
+        return $this;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function stop()

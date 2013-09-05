@@ -489,6 +489,19 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($data, $job->getData());
     }
 
+    public function testSingleRunRunsAndStop()
+    {
+        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+
+        $job = new JobTest();
+        $job->setId('Id');
+        $start = microtime(true);
+        $job->singleRun($data);
+
+        $this->assertLessThan(0.1, microtime(true) - $start);
+        $this->assertSame($data, $job->getData());
+    }
+
     public function testDoRunWithoutdataIsOk()
     {
         $job = new JobTest();
