@@ -9,6 +9,7 @@ use Alchemy\Test\TaskManager\PhpProcess;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\Process\Exception\RuntimeException as ProcessRuntimeException;
 
 class AbstractJobTest extends \PHPUnit_Framework_TestCase
 {
@@ -30,137 +31,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
             unlink($file->getPathname());
         }
     }
-
-    private function getSelfStoppingScript()
-    {
-        return '<?php
-        require "'.__DIR__.'/../../../../vendor/autoload.php";
-
-        use Alchemy\TaskManager\JobDataInterface;
-
-        class Job extends Alchemy\TaskManager\AbstractJob
-        {
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
-            protected function doRun(JobDataInterface $data = null)
-            {
-                $n = 0;
-                declare(ticks=1);
-                while ($n < 60 && $this->getStatus() === static::STATUS_STARTED) {
-                    usleep(10000);
-                    $n++;
-                }
-                $this->stop();
-            }
-        }
-
-        $job = new Job();
-        $job->run();
-        ';
-    }
-
-    private function getNonStoppingScript($time, $extra, $conf)
-    {
-        return '<?php
-        require "'.__DIR__.'/../../../../vendor/autoload.php";
-
-        use Alchemy\TaskManager\JobDataInterface;
-
-        class Job extends Alchemy\TaskManager\AbstractJob
-        {
-            private $data;
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
-            protected function doRun(JobDataInterface $data = null)
-            {
-            declare(ticks=1);
-                '.$extra.'
-                usleep('.($time*10).'*100000);
-            }
-        }
-
-            declare(ticks=1);
-        $job = new Job();
-        '.$conf.'
-        assert($job === $job->run());
-        ';
-    }
-
-    public function testLockingShouldPreventRunningTheSameProcessWIthSameIdTwice()
-    {
-        $script = $this->getSelfStoppingScript();
-
-        $process1 = new PhpProcess($script);
-        $process2 = new PhpProcess($script);
-
-        $process1->start();
-        usleep(300000);
-        $process2->run();
-        $process1->wait();
-
-        $this->assertTrue($process1->isSuccessful());
-        $this->assertFalse($process2->isSuccessful());
-
-        $this->assertEquals(0, $process1->getExitCode());
-        $this->assertEquals(255, $process2->getExitCode());
-    }
-
-    public function testLockFilesAreRemovedOnStop()
-    {
-        $finder = Finder::create();
-        $finder->useBestAdapter();
-
-        $process1 = new PhpProcess($this->getSelfStoppingScript());
-        $process1->start();
-
-        usleep(100000);
-        $finder->files()->in($this->lockDir);
-        $this->assertCount(1, $finder);
-
-        $process1->wait();
-
-        $this->assertCount(0, $finder);
-    }
-
-    /**
-     * @dataProvider provideSignals
-     */
-    public function testLockFilesAreRemovedOnStopSignal($signal)
-    {
-        $process1 = new PhpProcess($this->getSelfStoppingScript());
-        $process1->start();
-
-        usleep(100000);
-        $process1->signal($signal);
-        $start = microtime(true);
-        $process1->wait();
-        $this->assertLessThan(0.1, microtime(true) - $start);
-
-        $finder = Finder::create();
-        $finder->useBestAdapter();
-        $finder->files()->in($this->lockDir);
-        $this->assertCount(0, $finder);
-    }
-
-    public function provideSignals()
-    {
-        return array(
-            array(SIGTERM),
-            array(SIGINT),
-        );
-    }
-
+    
     private function getPauseScript()
     {
         return '<?php
@@ -271,6 +142,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         }
 
         $job = new Job();
+        $job->addSubscriber(new Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber());
         $job->addListener(TaskManagerEvents::START, function () { echo "start\n"; });
         $job->addListener(TaskManagerEvents::TICK, function () { echo "tick\n"; });
         $job->addListener(TaskManagerEvents::STOP, function () { echo "stop\n"; });

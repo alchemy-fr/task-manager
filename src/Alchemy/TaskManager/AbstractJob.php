@@ -225,25 +225,6 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * Signal handler for the job.
-     *
-     * @param integer $signal
-     */
-    public function signalHandler($signal)
-    {
-        switch ($signal) {
-            case SIGTERM:
-                $this->log('info', 'Caught SIGTERM signal, stopping');
-                $this->stop();
-                break;
-            case SIGINT:
-                $this->log('info', 'Caught SIGINT signal, stopping');
-                $this->stop();
-                break;
-        }
-    }
-
-    /**
      * Tick handler for the job.
      */
     public function tickHandler()
@@ -317,8 +298,6 @@ abstract class AbstractJob implements JobInterface
         $this->status = static::STATUS_STARTED;
 
         register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
-        pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
         return $this;
     }
@@ -336,8 +315,6 @@ abstract class AbstractJob implements JobInterface
             $this->lockFile->unlock();
         }
         unregister_tick_function(array($this, 'tickHandler'));
-        pcntl_signal(SIGINT, function () {});
-        pcntl_signal(SIGTERM, function () {});
         $this->status = static::STATUS_STOPPED;
 
         return $this;

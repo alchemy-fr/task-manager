@@ -6,7 +6,7 @@ use Symfony\Component\Finder\Finder;
 
 class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 {
-    private $lockDir;
+    protected $lockDir;
 
     public function setUp()
     {
@@ -24,7 +24,7 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
             unlink($file->getPathname());
         }
     }
-    
+
     protected function getNonStoppingScript($time, $extra, $conf)
     {
         return '<?php
@@ -55,6 +55,40 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
         $job = new Job();
         '.$conf.'
         assert($job === $job->run());
+        ';
+    }
+
+    protected function getSelfStoppingScript()
+    {
+        return '<?php
+        require "'.__DIR__.'/../../../../vendor/autoload.php";
+
+        use Alchemy\TaskManager\JobDataInterface;
+
+        class Job extends Alchemy\TaskManager\AbstractJob
+        {
+            public function __construct()
+            {
+                parent::__construct();
+                $this->setId("laal");
+                $this->setLockDirectory("' . $this->lockDir . '");
+            }
+
+            protected function doRun(JobDataInterface $data = null)
+            {
+                $n = 0;
+                declare(ticks=1);
+                while ($n < 60 && $this->getStatus() === static::STATUS_STARTED) {
+                    usleep(10000);
+                    $n++;
+                }
+                $this->stop();
+            }
+        }
+
+        $job = new Job();
+        $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber());
+        $job->run();
         ';
     }
 }

@@ -3,6 +3,8 @@
 namespace Alchemy\Functional\TaskManager;
 
 use Alchemy\Test\TaskManager\PhpProcess;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Process\Exception\RuntimeException as ProcessRuntimeException;
 
 class JobTest extends FunctionalTestCase
 {
@@ -59,7 +61,7 @@ class JobTest extends FunctionalTestCase
     public function testPeriodicSignal($periodMilliseconds)
     {
         $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber('.($periodMilliseconds / 1000).'));');
-        
+
         $process1 = new PhpProcess($script);
         $process1->start();
 
@@ -80,6 +82,74 @@ class JobTest extends FunctionalTestCase
         return array(
             array(150),
             array(450),
+        );
+    }
+
+    public function testLockingShouldPreventRunningTheSameProcessWIthSameIdTwice()
+    {
+        $script = $this->getSelfStoppingScript();
+
+        $process1 = new PhpProcess($script);
+        $process2 = new PhpProcess($script);
+
+        $process1->start();
+        usleep(300000);
+        $process2->run();
+        $process1->wait();
+
+        $this->assertTrue($process1->isSuccessful());
+        $this->assertFalse($process2->isSuccessful());
+
+        $this->assertEquals(0, $process1->getExitCode());
+        $this->assertEquals(255, $process2->getExitCode());
+    }
+
+    public function testLockFilesAreRemovedOnStop()
+    {
+        $finder = Finder::create();
+        $finder->useBestAdapter();
+
+        $process1 = new PhpProcess($this->getSelfStoppingScript());
+        $process1->start();
+
+        usleep(100000);
+        $finder->files()->in($this->lockDir);
+        $this->assertCount(1, $finder);
+
+        $process1->wait();
+
+        $this->assertCount(0, $finder);
+    }
+
+    /**
+     * @dataProvider provideSignals
+     */
+    public function testLockFilesAreRemovedOnStopSignal($signal)
+    {
+        $process1 = new PhpProcess($this->getSelfStoppingScript());
+        $process1->start();
+
+        usleep(100000);
+        $process1->signal($signal);
+        $start = microtime(true);
+        try {
+            $process1->wait();
+        } catch (ProcessRuntimeException $e) {
+
+        }
+        $this->assertLessThan(0.1, microtime(true) - $start);
+
+        $finder = Finder::create();
+        $finder->useBestAdapter();
+        $finder->files()->in($this->lockDir);
+        $this->assertCount(0, $finder);
+    }
+
+    public function provideSignals()
+    {
+        return array(
+            array(SIGTERM),
+            array(SIGINT),
         );
     }
 }
