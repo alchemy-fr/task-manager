@@ -13,4 +13,5 @@ php:
   - 5.5
 
 script:
-  - vendor/bin/phpunit
+  - vendor/bin/phpunit -c phpunit.xml.dist
+  - vendor/bin/phpunit -c phpunit-functional.xml.dist
