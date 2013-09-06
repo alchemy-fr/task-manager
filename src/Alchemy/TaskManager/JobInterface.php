@@ -12,6 +12,7 @@
 namespace Alchemy\TaskManager;
 
 use Psr\Log\LoggerAwareInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * A Job Interface
@@ -184,6 +185,25 @@ interface JobInterface extends LoggerAwareInterface
      */
     public function setLockDirectory($directory);
 
+    /**
+     * Adds a listener to the job.
+     *
+     * @param string   $eventName
+     * @param callable $listener
+     *
+     * @return JobInterface
+     */
+    public function addListener($eventName, $listener);
+
+    /**
+     * Adds an event subscriber to the job.
+     *
+     * @param EventSubscriberInterface $subscriber
+     *
+     * @return JobInterface
+     */
+    public function addSubscriber(EventSubscriberInterface $subscriber);
+    
     /**
      * Stops the job.
      *

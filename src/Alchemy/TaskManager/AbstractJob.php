@@ -18,6 +18,7 @@ use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 abstract class AbstractJob implements JobInterface
 {
@@ -44,7 +45,7 @@ abstract class AbstractJob implements JobInterface
     /** @var LockFile */
     private $lockFile;
     private $dispatcher;
-    
+
     public function __construct(EventDispatcherInterface $dispatcher = null)
     {
         if (null === $dispatcher) {
@@ -56,6 +57,26 @@ abstract class AbstractJob implements JobInterface
     public function __destruct()
     {
         $this->cleanup();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addListener($eventName, $listener)
+    {
+        $this->dispatcher->addListener($eventName, $listener);
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function addSubscriber(EventSubscriberInterface $subscriber)
+    {
+        $this->dispatcher->addSubscriber($subscriber);
+
+        return $this;
     }
 
     /**
@@ -272,7 +293,7 @@ abstract class AbstractJob implements JobInterface
             $this->pause($this->getPauseDuration());
         }
         $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
-        
+
         return $this->cleanup();
     }
 
@@ -297,7 +318,7 @@ abstract class AbstractJob implements JobInterface
         $this->doRunOrCleanup($data, $callback);
         $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
         $this->cleanup();
-        
+
         return $this;
     }
 
@@ -309,7 +330,7 @@ abstract class AbstractJob implements JobInterface
         if ($this->isStarted()) {
             $this->status = static::STATUS_STOPPING;
         }
-        
+
         return $this;
     }
 
@@ -340,7 +361,7 @@ abstract class AbstractJob implements JobInterface
      */
     public function tickHandler()
     {
-        if (static::STATUS_STARTED !== $this->status) {
+        if (!$this->isRunning()) {
             return;
         }
         $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));

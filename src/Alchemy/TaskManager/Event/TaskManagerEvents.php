@@ -17,12 +17,12 @@ class TaskManagerEvents
      * This event is triggered when the job starts running.
      */
     const START = 'start';
-    
+
     /**
      * This event is triggered on PHP tick.
      */
     const TICK = 'tick';
-    
+
     /**
      * This event is triggered when the job stops running.
      */

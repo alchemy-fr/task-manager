@@ -22,10 +22,10 @@ class JobEvent extends Event
     {
         $this->job = $job;
     }
-    
+
     /**
      * Returns the related job.
-     * 
+     *
      * @return JobInterface
      */
     public function getJob()
