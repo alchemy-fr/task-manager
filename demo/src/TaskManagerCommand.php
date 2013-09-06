@@ -22,12 +22,10 @@ class TaskManagerCommand extends Command
         $this->addOption('host', null, InputOption::VALUE_REQUIRED, 'The host to bind to.', '127.0.0.1')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'The port tot bind to.', '6660');
 
-        $socket = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP);
-
         $logger = new Logger('test');
         $logger->pushHandler(new StreamHandler('php://stdout'));
 
-        $this->manager = new TaskManager($socket, $logger, new TaskList());
+        $this->manager = TaskManager::create($logger, new TaskList());
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
