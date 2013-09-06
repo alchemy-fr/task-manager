@@ -340,6 +340,9 @@ abstract class AbstractJob implements JobInterface
      */
     public function tickHandler()
     {
+        if (static::STATUS_STARTED !== $this->status) {
+            return;
+        }
         $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
         $this->checkDuration();
         $this->checkSignals();
@@ -487,9 +490,6 @@ abstract class AbstractJob implements JobInterface
         if (!$this->isStopMode(static::MODE_STOP_UNLESS_SIGNAL)) {
             return;
         }
-        if (static::STATUS_STARTED !== $this->status) {
-            return;
-        }
 
         if (null === $this->lastSignalTime) {
             if ((microtime(true) - $this->startTime) > $this->signalPeriod) {
@@ -512,9 +512,6 @@ abstract class AbstractJob implements JobInterface
         if (!$this->isStopMode(static::MODE_STOP_ON_MEMORY) || null === $this->maxMemory) {
             return;
         }
-        if (static::STATUS_STARTED !== $this->status) {
-            return;
-        }
 
         if (memory_get_usage() > $this->maxMemory) {
             $this->log('debug', sprintf('Max memory reached (%d o.), stopping.', $this->maxMemory));
@@ -530,9 +527,6 @@ abstract class AbstractJob implements JobInterface
     private function checkDuration()
     {
         if (!$this->isStopMode(static::MODE_STOP_ON_DURATION) || null === $this->maxDuration) {
-            return;
-        }
-        if (static::STATUS_STARTED !== $this->status) {
             return;
         }
 
