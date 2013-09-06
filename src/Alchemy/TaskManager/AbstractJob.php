@@ -288,8 +288,10 @@ abstract class AbstractJob implements JobInterface
      */
     public function stop()
     {
-        $this->status = static::STATUS_STOPPING;
-
+        if ($this->isStarted()) {
+            $this->status = static::STATUS_STOPPING;
+        }
+        
         return $this;
     }
 
