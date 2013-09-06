@@ -11,4 +11,3 @@ class PhpProcess extends SfPhpProcess
         return parent::setCommandLine('exec ' . $commandline);
     }
 }
-

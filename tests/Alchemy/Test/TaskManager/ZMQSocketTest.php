@@ -16,12 +16,12 @@ class ZMQSocketTest extends \PHPUnit_Framework_TestCase
         $socket->bind();
         $socket->unbind();
     }
-    
+
     public function testBindUnbindInParallelOnSamePort()
     {
         $context1 = new \ZMQContext;
         $socket1 = new ZMQSocket($context1, \ZMQ::SOCKET_REP, 'tcp', '127.0.0.1', 6660);
-        
+
         $context2 = new \ZMQContext;
         $socket2 = new ZMQSocket($context2, \ZMQ::SOCKET_REP, 'tcp', '127.0.0.1', 6660);
 
