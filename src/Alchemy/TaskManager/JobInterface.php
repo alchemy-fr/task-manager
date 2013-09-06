@@ -20,7 +20,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 interface JobInterface extends LoggerAwareInterface
 {
     const MODE_STOP_UNLESS_SIGNAL = 1;
-    const MODE_STOP_ON_MEMORY = 2;
     const MODE_STOP_ON_DURATION = 4;
 
     const STATUS_STARTED = 'started';
@@ -74,30 +73,6 @@ interface JobInterface extends LoggerAwareInterface
      * @api
      */
     public function getMaxDuration();
-
-    /**
-     * Sets the maximum memory the job can use before it would be stopped, if
-     * the MODE_STOP_ON_MEMORY mode is enabled.
-     *
-     * @param integer $memory
-     *
-     * @return JobInterface
-     *
-     * @throws InvalidArgumentException
-     *
-     * @api
-     */
-    public function setMaxMemory($memory);
-
-    /**
-     * Returns the maximum memory the job can use before it would be stopped, if
-     * the MODE_STOP_ON_MEMORY mode is enabled.
-     *
-     * @return integer
-     *
-     * @api
-     */
-    public function getMaxMemory();
 
     /**
      * Sets the period to wait for a SIGCONT signal otherwise the job

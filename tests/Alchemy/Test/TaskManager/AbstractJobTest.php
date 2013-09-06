@@ -79,7 +79,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
                 parent::__construct();
                 $this->setId("laal");
                 $this->setLockDirectory("' . $this->lockDir . '");
-                $this->setMaxMemory(10*1024*1024);
             }
 
             protected function doRun(JobDataInterface $data = null)
@@ -158,32 +157,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         return array(
             array(SIGTERM),
             array(SIGINT),
-        );
-    }
-
-    /**
-     * @dataProvider provideVariousMemoryValues
-     */
-    public function testMaxMemory($max, $megPerSeconds, $expectedDuration)
-    {
-        $script = $this->getNonStoppingScript(1, ' $this->data .= str_repeat("x", '.$megPerSeconds.'*1024*1024);', '$job->setMaxMemory('.$max.'*1024*1024);$job->enableStopMode(Alchemy\TaskManager\JobInterface::MODE_STOP_ON_MEMORY);');
-        $process1 = new PhpProcess($script);
-
-        $start = microtime(true);
-        $process1->run();
-
-        $duration = microtime(true) - $start;
-
-        $this->assertLessThan(0.30, abs($expectedDuration-$duration));
-    }
-
-    public function provideVariousMemoryValues()
-    {
-        return array(
-            array(10, 10, 1),
-            array(10, 5, 2),
-            array(20, 20, 1),
-            array(20, 10, 2),
         );
     }
 
@@ -406,28 +379,20 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     {
         $job = new JobTest();
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
         $job->enableStopMode(JobInterface::MODE_STOP_ON_DURATION);
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->enableStopMode(JobInterface::MODE_STOP_ON_MEMORY);
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
         $job->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->disableStopMode(JobInterface::MODE_STOP_ON_MEMORY);
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
         $job->disableStopMode(JobInterface::MODE_STOP_ON_DURATION);
         $job->disableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_MEMORY));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
     }
 
@@ -459,30 +424,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     {
         $job = new JobTest();
         $job->isStopMode('invalid');
-    }
-
-    public function testMaxMemoryGettersAndSetters()
-    {
-        $job = new JobTest();
-        $this->assertSame(32E6, $job->getMaxMemory());
-        $this->assertSame($job, $job->setMaxMemory(2048));
-        $this->assertSame(2048, $job->getMaxMemory());
-    }
-
-    /**
-     * @dataProvider provideInvalidMemoryValues
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Maximum memory should be a positive value.
-     */
-    public function testInvalidMaxMemoryValues($memory)
-    {
-        $job = new JobTest();
-        $job->setMaxMemory($memory);
-    }
-
-    public function provideInvalidMemoryValues()
-    {
-        return array(array(0), array(-20));
     }
 
     public function testMaxDurationGettersAndSetters()
@@ -558,30 +499,30 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertLessThan(0.1, microtime(true) - $start);
         $this->assertSame($data, $job->getData());
     }
-    
+
     public function testAddAListener()
     {
         $dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
         $listener = array($this, 'testAddAListener');
         $name = 'event-name';
-        
+
         $dispatcher->expects($this->once())
                 ->method('addListener')
                 ->with($name, $listener);
-        
+
         $job = new JobTest($dispatcher);
         $this->assertSame($job, $job->addListener($name, $listener));
     }
-    
+
     public function testAddASubscriber()
     {
         $dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
         $subscriber = $this->getMock('Symfony\Component\EventDispatcher\EventSubscriberInterface');
-        
+
         $dispatcher->expects($this->once())
                 ->method('addSubscriber')
                 ->with($subscriber);
-        
+
         $job = new JobTest($dispatcher);
         $this->assertSame($job, $job->addSubscriber($subscriber));
     }
@@ -602,13 +543,13 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->addListener(TaskManagerEvents::STOP, function () use (&$collector) {
             $collector[] = TaskManagerEvents::STOP;
         });
-        
+
         $this->assertSame($job, $job->singleRun($data));
         $this->assertSame(TaskManagerEvents::START, $collector[0]);
         $this->assertSame(TaskManagerEvents::TICK, $collector[1]);
         $this->assertContains(TaskManagerEvents::STOP, $collector);
     }
-    
+
     public function testDoRunWithoutdataIsOk()
     {
         $job = new JobTest();
@@ -623,13 +564,9 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job = new JobTest();
         $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_ON_MEMORY));
         $job->setMaxDuration(3);
         $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
         $job->disableStopMode(JobTest::MODE_STOP_ON_DURATION);
-        $job->setMaxMemory(34E6);
-        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_ON_MEMORY));
-        $job->disableStopMode(JobTest::MODE_STOP_ON_MEMORY);
         $job->setSignalPeriod(2);
         $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
     }

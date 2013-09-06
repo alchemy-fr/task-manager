@@ -32,8 +32,6 @@ abstract class AbstractJob implements JobInterface
     private $maxDuration = 0;
     /** @var null|float */
     private $signalPeriod = 0.5;
-    /** @var null|integer */
-    private $maxMemory = 32E6;
     /** @var integer */
     private $mode = 0;
     /** @var null|string */
@@ -204,29 +202,6 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function getMaxMemory()
-    {
-        return $this->maxMemory;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setMaxMemory($memory)
-    {
-        if (0 >= $memory) {
-            throw new InvalidArgumentException('Maximum memory should be a positive value.');
-        }
-
-        $this->enableStopMode(static::MODE_STOP_ON_MEMORY);
-        $this->maxMemory = (integer) $memory;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getSignalPeriod()
     {
         return $this->signalPeriod;
@@ -367,7 +342,6 @@ abstract class AbstractJob implements JobInterface
         $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
         $this->checkDuration();
         $this->checkSignals();
-        $this->checkMemory();
     }
 
     /**
@@ -524,23 +498,6 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * In case the mode MODE_STOP_ON_MEMORY is enabled, checks for the
-     * amount of memory used. Stops the job if the more thand the maximum
-     * allowed amount of memory is used.
-     */
-    private function checkMemory()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_ON_MEMORY) || null === $this->maxMemory) {
-            return;
-        }
-
-        if (memory_get_usage() > $this->maxMemory) {
-            $this->log('debug', sprintf('Max memory reached (%d o.), stopping.', $this->maxMemory));
-            $this->stop();
-        }
-    }
-
-    /**
      * In case the mode MODE_STOP_ON_DURATION is enabled, checks for the
      * current duration of the job. Stops the job if its current duration is
      * longer than the maximum allowed duration.
@@ -584,7 +541,7 @@ abstract class AbstractJob implements JobInterface
      */
     private function validateMode($mode)
     {
-        if (!in_array($mode, array(static::MODE_STOP_ON_DURATION, static::MODE_STOP_ON_MEMORY, static::MODE_STOP_UNLESS_SIGNAL), true)) {
+        if (!in_array($mode, array(static::MODE_STOP_ON_DURATION, static::MODE_STOP_UNLESS_SIGNAL), true)) {
             throw new InvalidArgumentException('Invalid mode value.');
         }
 
