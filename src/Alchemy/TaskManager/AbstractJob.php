@@ -42,7 +42,7 @@ abstract class AbstractJob implements JobInterface
 
     public function __destruct()
     {
-        $this->finish();
+        $this->cleanup();
     }
 
     /**
@@ -221,7 +221,7 @@ abstract class AbstractJob implements JobInterface
     {
         return in_array($this->status, array(static::STATUS_STARTED, static::STATUS_STOPPING), true);
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -229,7 +229,7 @@ abstract class AbstractJob implements JobInterface
     {
         return static::STATUS_STOPPING === $this->status;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -237,7 +237,7 @@ abstract class AbstractJob implements JobInterface
     {
         return static::STATUS_STARTED === $this->status;
     }
-    
+
     /**
      * {@inheritdoc}
      */
@@ -249,56 +249,38 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    final public function run(JobDataInterface $data = null)
+    final public function run(JobDataInterface $data = null, $callback = null)
     {
-        $this->lockFile = new LockFile($this->getLockFilePath());
-        $this->lockFile->lock();
-
-        $this->status = static::STATUS_STARTED;
-        $this->startTime = microtime(true);
-
         declare(ticks=1);
-        register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
-        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
-        pcntl_signal(SIGINT, array($this, 'signalHandler'));
-
+        $this->setup();
         while (static::STATUS_STARTED === $this->status) {
-            $this->doRun($data);
+            $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
 
-        $this->finish();
-
-        return $this;
+        return $this->cleanup();
     }
 
     /**
      * Runs the job implementation a single time.
      *
+     * If a callback is provided, the it will be call with the job itself as
+     * first argument an the return value of the doRun method as second
+     * argument.
+     *
      * @param JobDataInterface $data
+     * @param null|callable    $callback A callback
      *
      * @return AbstractJob
      */
-    final public function singleRun(JobDataInterface $data = null)
+    final public function singleRun(JobDataInterface $data = null, $callback = null)
     {
-        $this->lockFile = new LockFile($this->getLockFilePath());
-        $this->lockFile->lock();
-
-        $this->status = static::STATUS_STARTED;
-        $this->startTime = microtime(true);
-
         declare(ticks=1);
-        register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
-        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
-        pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
-        $this->doRun($data);
-
-        $this->finish();
-
-        return $this;
+        return $this
+            ->setup()
+            ->doRunOrCleanup($data, $callback)
+            ->cleanup();
     }
 
     /**
@@ -341,25 +323,6 @@ abstract class AbstractJob implements JobInterface
         $this->checkDuration();
         $this->checkSignals();
         $this->checkMemory();
-    }
-
-    /**
-     * Finishes a job.
-     *
-     * In case of failure, his method must be called to cleanup internals.
-     *
-     *
-     * @return JobInterface
-     */
-    protected function finish()
-    {
-        if (null !== $this->lockFile) {
-            $this->lockFile->unlock();
-        }
-        unregister_tick_function(array($this, 'tickHandler'));
-        $this->status = static::STATUS_STOPPED;
-
-        return $this;
     }
 
     /**
@@ -410,6 +373,87 @@ abstract class AbstractJob implements JobInterface
         }
 
         return $this;
+    }
+
+    /**
+     * Sets up the job, add locks and reister tick handlers.
+     *
+     * @return JobInterface
+     */
+    private function setup()
+    {
+        $this->lockFile = new LockFile($this->getLockFilePath());
+        $this->lockFile->lock();
+
+        $this->status = static::STATUS_STARTED;
+        $this->startTime = microtime(true);
+
+        register_tick_function(array($this, 'tickHandler'), true);
+        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
+        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
+        pcntl_signal(SIGINT, array($this, 'signalHandler'));
+
+        return $this;
+    }
+
+    /**
+     * Cleanups a job.
+     *
+     * Removes locks and handlers.
+     *
+     * @return JobInterface
+     */
+    private function cleanup()
+    {
+        if (null !== $this->lockFile) {
+            $this->lockFile->unlock();
+        }
+        unregister_tick_function(array($this, 'tickHandler'));
+        pcntl_signal(SIGINT, function () {});
+        pcntl_signal(SIGCONT, function () {});
+        pcntl_signal(SIGTERM, function () {});
+        $this->status = static::STATUS_STOPPED;
+
+        return $this;
+    }
+
+    /**
+     * Does execute the doRun method. In case an exception is thrown, cleans up
+     * and forward the exception.
+     *
+     * @param JobDataInterface $data     The data to pass to the doRun method.
+     * @param null|callable    $callback A callback
+     *
+     * @return JobInterface
+     *
+     * @throws Exception The caught exception is forwarded in case it occured.
+     */
+    private function doRunOrCleanup(JobDataInterface $data = null, $callback = null)
+    {
+        try {
+            call_user_func($this->createCallback($callback), $this, $this->doRun($data));
+        } catch (\Exception $e) {
+            $this->cleanup();
+            throw $e;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Returns a callback given a callable or null argument.
+     *
+     * @param null|callable $callback
+     *
+     * @return callable
+     */
+    private function createCallback($callback)
+    {
+        if (is_callable($callback)) {
+            return $callback;
+        }
+
+        return function () {};
     }
 
     /**

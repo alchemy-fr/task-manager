@@ -196,26 +196,30 @@ interface JobInterface extends LoggerAwareInterface
     /**
      * Runs the job.
      *
+     * If a callback is provided, the it will be call with the job itself as
+     * first argument an the return value of the doRun method as second
+     * argument.
+     *
      * @param JobDataInterface $data
      *
      * @return JobInterface
      *
      * @api
      */
-    public function run(JobDataInterface $data = null);
+    public function run(JobDataInterface $data = null, $callback = null);
 
     /**
      * Runs the job implementation a single time.
      *
      * @param JobDataInterface $data
      *
-     * @return AbstractJob
+     * @return JobInterface
      */
     public function singleRun(JobDataInterface $data = null);
 
     /**
      * Checks if the job is running.
-     * 
+     *
      * Please note that a stopping job is considered running. To check if the
      * status is exactly in the started status, use the isStarted method.
      *

@@ -90,7 +90,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
             declare(ticks=1);
         $job = new Job();
         '.$conf.'
-        $job->run();
+        assert($job === $job->run());
         ';
     }
 
@@ -496,7 +496,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job = new JobTest();
         $job->setId('Id');
         $start = microtime(true);
-        $job->singleRun($data);
+        $this->assertSame($job, $job->singleRun($data));
 
         $this->assertLessThan(0.1, microtime(true) - $start);
         $this->assertSame($data, $job->getData());
@@ -563,7 +563,6 @@ class JobFailureTest extends AbstractJob
 {
     protected function doRun(JobDataInterface $data = null)
     {
-        $this->finish();
         throw new JobFailureException('Total failure.');
     }
 }
@@ -571,4 +570,3 @@ class JobFailureTest extends AbstractJob
 class JobFailureException extends \Exception
 {
 }
-
