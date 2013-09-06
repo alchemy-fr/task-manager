@@ -39,7 +39,7 @@ class JobTest extends FunctionalTestCase
     {
         $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber('.$max.'));');
         $process1 = new PhpProcess($script);
-        
+
         $start = microtime(true);
         $process1->run();
 
@@ -51,5 +51,35 @@ class JobTest extends FunctionalTestCase
     public function provideVariousDurationValues()
     {
         return array(array(0.3), array(0.5), array(0.7));
+    }
+
+    /**
+     * @dataProvider provideVariousPeriods
+     */
+    public function testPeriodicSignal($periodMilliseconds)
+    {
+        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber('.($periodMilliseconds / 1000).'));');
+        
+        $process1 = new PhpProcess($script);
+        $process1->start();
+
+        $end = microtime(true) + (7 * $periodMilliseconds / 1000);
+
+        while (microtime(true) < $end) {
+            usleep($periodMilliseconds * 1000 * 2 / 3);
+            $process1->signal(SIGCONT);
+            $this->assertTrue($process1->isRunning());
+        }
+
+        usleep($periodMilliseconds * 1000 * 3 / 2);
+        $this->assertFalse($process1->isRunning());
+    }
+
+    public function provideVariousPeriods()
+    {
+        return array(
+            array(150),
+            array(450),
+        );
     }
 }

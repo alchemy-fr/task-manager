@@ -161,36 +161,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    /**
-     * @dataProvider provideVariousPeriods
-     */
-    public function testPeriodicSignal($periodMilliseconds)
-    {
-        $script = $this->getNonStoppingScript(0.1, '', '$job->enableStopMode(Alchemy\TaskManager\JobInterface::MODE_STOP_UNLESS_SIGNAL);$job->setSignalPeriod('.($periodMilliseconds / 1000).');');
-
-        $process1 = new PhpProcess($script);
-        $process1->start();
-
-        $end = microtime(true) + (7 * $periodMilliseconds / 1000);
-
-        while (microtime(true) < $end) {
-            usleep($periodMilliseconds * 1000 * 2 / 3);
-            $process1->signal(SIGCONT);
-            $this->assertTrue($process1->isRunning());
-        }
-
-        usleep($periodMilliseconds * 1000 * 3 / 2);
-        $this->assertFalse($process1->isRunning());
-    }
-
-    public function provideVariousPeriods()
-    {
-        return array(
-            array(150),
-            array(450),
-        );
-    }
-
     private function getPauseScript()
     {
         return '<?php
@@ -355,73 +325,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($logger, $job->getLogger());
     }
 
-    public function testModeGettersAndSetters()
-    {
-        $job = new JobTest();
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->disableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-    }
-
-    /**
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Invalid mode value.
-     */
-    public function testEnableInvalidMode()
-    {
-        $job = new JobTest();
-        $job->enableStopMode('invalid');
-    }
-
-    /**
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Invalid mode value.
-     */
-    public function testDisableInvalidMode()
-    {
-        $job = new JobTest();
-        $job->disableStopMode('invalid');
-    }
-
-    /**
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Invalid mode value.
-     */
-    public function testTestInvalidMode()
-    {
-        $job = new JobTest();
-        $job->isStopMode('invalid');
-    }
-
-    public function testSignalPeriodGettersAndSetters()
-    {
-        $job = new JobTest();
-        $this->assertSame(0.5, $job->getSignalPeriod());
-        $this->assertSame($job, $job->setSignalPeriod(42));
-        $this->assertSame((float) 42, $job->getSignalPeriod());
-    }
-
-    /**
-     * @dataProvider provideInvalidSignalPeriodValues
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Signal period should be greater than 0.15 s.
-     */
-    public function testInvalidSignalPeriod($period)
-    {
-        $job = new JobTest();
-        $job->setSignalPeriod($period);
-    }
-
-    public function provideInvalidSignalPeriodValues()
-    {
-        return array(array(0), array(-2), array(0.14));
-    }
-
     public function testDataIsPassedToDoRun()
     {
         $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
@@ -503,14 +406,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->setId('Id');
         $job->addSubscriber(new DurationLimitSubscriber(0.1));
         $job->run();
-    }
-
-    public function testThatSettingAStopParameterEnablesTheStopMode()
-    {
-        $job = new JobTest();
-        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
-        $job->setSignalPeriod(2);
-        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
     }
 
     public function testJobCanBeRestartedAfterAFailure()

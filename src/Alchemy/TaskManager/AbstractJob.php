@@ -24,14 +24,6 @@ abstract class AbstractJob implements JobInterface
 {
     /** @var string */
     private $id;
-    /** @var null|float */
-    private $lastSignalTime = null;
-    /** @var null|float */
-    private $startTime = null;
-    /** @var null|float */
-    private $signalPeriod = 0.5;
-    /** @var integer */
-    private $mode = 0;
     /** @var null|string */
     private $status;
     /** @var null|LoggerInterface */
@@ -149,58 +141,6 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function enableStopMode($mode)
-    {
-        $this->mode |= $this->validateMode($mode);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function disableStopMode($mode)
-    {
-        $this->mode = $this->mode & ~$this->validateMode($mode);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isStopMode($mode)
-    {
-        return (boolean) ($this->mode & $this->validateMode($mode));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSignalPeriod()
-    {
-        return $this->signalPeriod;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setSignalPeriod($period)
-    {
-        // use 3x the step used for pause
-        if (0.15 > $period) {
-            throw new InvalidArgumentException('Signal period should be greater than 0.15 s.');
-        }
-
-        $this->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->signalPeriod = (float) $period;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function isRunning()
     {
         return in_array($this->status, array(static::STATUS_STARTED, static::STATUS_STOPPING), true);
@@ -292,9 +232,6 @@ abstract class AbstractJob implements JobInterface
     public function signalHandler($signal)
     {
         switch ($signal) {
-            case SIGCONT:
-                $this->lastSignalTime = microtime(true);
-                break;
             case SIGTERM:
                 $this->log('info', 'Caught SIGTERM signal, stopping');
                 $this->stop();
@@ -315,7 +252,6 @@ abstract class AbstractJob implements JobInterface
             return;
         }
         $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
-        $this->checkSignals();
     }
 
     /**
@@ -379,10 +315,8 @@ abstract class AbstractJob implements JobInterface
         $this->lockFile->lock();
 
         $this->status = static::STATUS_STARTED;
-        $this->startTime = microtime(true);
 
         register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
         pcntl_signal(SIGTERM, array($this, 'signalHandler'));
         pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
@@ -403,7 +337,6 @@ abstract class AbstractJob implements JobInterface
         }
         unregister_tick_function(array($this, 'tickHandler'));
         pcntl_signal(SIGINT, function () {});
-        pcntl_signal(SIGCONT, function () {});
         pcntl_signal(SIGTERM, function () {});
         $this->status = static::STATUS_STOPPED;
 
@@ -450,28 +383,6 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * In case the mode MODE_STOP_UNLESS_SIGNAL is enabled, checks for the
-     * latest received signal. Stops the job if no signal received in the
-     * latest period.
-     */
-    private function checkSignals()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_UNLESS_SIGNAL)) {
-            return;
-        }
-
-        if (null === $this->lastSignalTime) {
-            if ((microtime(true) - $this->startTime) > $this->signalPeriod) {
-                $this->log('debug', sprintf('No signal received since start-time (max period is %s s.), stopping.', $this->signalPeriod));
-                $this->stop();
-            }
-        } elseif ((microtime(true) - $this->lastSignalTime) > $this->signalPeriod) {
-            $this->log('debug', sprintf('No signal received since %s, (max period is %s s.), stopping.', (microtime(true) - $this->lastSignalTime), $this->signalPeriod));
-            $this->stop();
-        }
-    }
-
-    /**
      * Return the file path to the lock file for this job.
      *
      * @return string
@@ -485,23 +396,5 @@ abstract class AbstractJob implements JobInterface
         }
 
         return $this->getLockDirectory() . '/task_' . $this->getID() . '.lock';
-    }
-
-    /**
-     * Validates a stop mode.
-     *
-     * @param integer $mode One of the MODE_STOP_* constant.
-     *
-     * @return integer The validated mode
-     *
-     * @throws InvalidArgumentException In case the mode is invalid
-     */
-    private function validateMode($mode)
-    {
-        if (!in_array($mode, array(static::MODE_STOP_UNLESS_SIGNAL), true)) {
-            throw new InvalidArgumentException('Invalid mode value.');
-        }
-
-        return $mode;
     }
 }

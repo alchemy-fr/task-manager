@@ -19,8 +19,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 interface JobInterface extends LoggerAwareInterface
 {
-    const MODE_STOP_UNLESS_SIGNAL = 1;
-
     const STATUS_STARTED = 'started';
     const STATUS_STOPPING = 'stopping';
     const STATUS_STOPPED = 'stopped';
@@ -48,63 +46,6 @@ interface JobInterface extends LoggerAwareInterface
      * @api
      */
     public function setId($id);
-
-    /**
-     * Sets the period to wait for a SIGCONT signal otherwise the job
-     * would be stopped, in case the MODE_STOP_UNLESS_SIGNAL mode is enabled.
-     *
-     * @param float $period
-     *
-     * @return JobInterface
-     *
-     * @throws InvalidArgumentException
-     *
-     * @api
-     */
-    public function setSignalPeriod($period);
-
-    /**
-     * Returns the period to wait for a SIGCONT signal otherwise the job
-     * would be stopped, in case the MODE_STOP_UNLESS_SIGNAL mode is enabled.
-     *
-     * @return float
-     *
-     * @api
-     */
-    public function getSignalPeriod();
-
-    /**
-     * Enables a stop mode.
-     *
-     * @param integer $mode One of the MODE_STOP_* constant
-     *
-     * @return JobInterface
-     *
-     * @api
-     */
-    public function enableStopMode($mode);
-
-    /**
-     * Disables a stop mode.
-     *
-     * @param integer $mode One of the MODE_STOP_* constant
-     *
-     * @return JobInterface
-     *
-     * @api
-     */
-    public function disableStopMode($mode);
-
-    /**
-     * Checks if a stop mode is enabled.
-     *
-     * @param integer $mode One of the MODE_STOP_* constant
-     *
-     * @return Boolean
-     *
-     * @api
-     */
-    public function isStopMode($mode);
 
     /**
      * Gets the lock directory.
