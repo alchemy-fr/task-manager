@@ -41,9 +41,10 @@ class SignalControlledSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            TaskManagerEvents::START => 'onJobStart',
-            TaskManagerEvents::TICK => 'onJobTick',
-            TaskManagerEvents::STOP => 'onJobStop',
+            TaskManagerEvents::START     => 'onJobStart',
+            TaskManagerEvents::TICK      => 'onJobTick',
+            TaskManagerEvents::STOP      => 'onJobStop',
+            TaskManagerEvents::EXCEPTION => 'onJobStop',
         );
     }
 

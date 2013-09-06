@@ -4,12 +4,10 @@ namespace Alchemy\Test\TaskManager;
 
 use Alchemy\TaskManager\AbstractJob;
 use Alchemy\TaskManager\JobDataInterface;
-use Alchemy\TaskManager\JobInterface;
 use Alchemy\Test\TaskManager\PhpProcess;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Process\Exception\RuntimeException as ProcessRuntimeException;
 
 class AbstractJobTest extends \PHPUnit_Framework_TestCase
 {
@@ -31,7 +29,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
             unlink($file->getPathname());
         }
     }
-    
+
     private function getPauseScript()
     {
         return '<?php
@@ -112,7 +110,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         ';
     }
 
-    private function getEventsScript()
+    private function getEventsScript($throwException)
     {
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
@@ -133,6 +131,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
             protected function doRun(JobDataInterface $data = null)
             {
+                '.($throwException ? 'throw new \Exception("failure");' : '').'
             }
 
             protected function getPauseDuration()
@@ -146,6 +145,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->addListener(TaskManagerEvents::START, function () { echo "start\n"; });
         $job->addListener(TaskManagerEvents::TICK, function () { echo "tick\n"; });
         $job->addListener(TaskManagerEvents::STOP, function () { echo "stop\n"; });
+        $job->addListener(TaskManagerEvents::EXCEPTION, function () { echo "exception\n"; });
         $job->run();
         ';
     }
@@ -166,7 +166,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
     public function testEvents()
     {
-        $script = $this->getEventsScript();
+        $script = $this->getEventsScript(false);
         $process = new PhpProcess($script);
 
         $process->start();
@@ -177,6 +177,21 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(TaskManagerEvents::START, $data[0]);
         $this->assertSame(TaskManagerEvents::TICK, $data[1]);
         $this->assertContains(TaskManagerEvents::STOP, $data);
+    }
+
+    public function testEventsWithException()
+    {
+        $script = $this->getEventsScript(true);
+        $process = new PhpProcess($script);
+
+        $process->start();
+        usleep(550000);
+        $process->stop();
+        $this->assertFalse($process->isRunning());
+        $data = array_filter(explode("\n", $process->getOutput()));
+        $this->assertSame(TaskManagerEvents::START, $data[0]);
+        $this->assertSame(TaskManagerEvents::TICK, $data[1]);
+        $this->assertContains(TaskManagerEvents::EXCEPTION, $data);
     }
 
     public function testLockDirectoryGettersAndSetters()
@@ -270,6 +285,37 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(TaskManagerEvents::START, $collector[0]);
         $this->assertSame(TaskManagerEvents::TICK, $collector[1]);
         $this->assertContains(TaskManagerEvents::STOP, $collector);
+    }
+
+    public function testEventsWithExceptionAreDispatchedOnSingleRun()
+    {
+        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+
+        $job = new JobFailureTest();
+        $job->setId('Id');
+        $collector = array();
+        $job->addListener(TaskManagerEvents::START, function () use (&$collector) {
+            $collector[] = TaskManagerEvents::START;
+        });
+        $job->addListener(TaskManagerEvents::TICK, function () use (&$collector) {
+            $collector[] = TaskManagerEvents::TICK;
+        });
+        $job->addListener(TaskManagerEvents::EXCEPTION, function ($event) use (&$collector) {
+            $collector[] = TaskManagerEvents::EXCEPTION;
+        });
+        $job->addListener(TaskManagerEvents::STOP, function () use (&$collector) {
+            $collector[] = TaskManagerEvents::STOP;
+        });
+
+        try {
+            $this->assertSame($job, $job->singleRun($data));
+            $this->fail('A job failure exception should have been raised.');
+        } catch (JobFailureException $e) {
+
+        }
+        $this->assertSame(TaskManagerEvents::START, $collector[0]);
+        $this->assertSame(TaskManagerEvents::TICK, $collector[1]);
+        $this->assertContains(TaskManagerEvents::EXCEPTION, $collector);
     }
 
     public function testDoRunWithoutdataIsOk()

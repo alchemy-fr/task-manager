@@ -27,4 +27,9 @@ class TaskManagerEvents
      * This event is triggered when the job stops running.
      */
     const STOP = 'stop';
+
+    /**
+     * This event is triggered whenever an exception is triggered during the job run.
+     */
+    const EXCEPTION = 'exception';
 }

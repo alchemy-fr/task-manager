@@ -14,6 +14,7 @@ namespace Alchemy\TaskManager;
 use Alchemy\TaskManager\Exception\InvalidArgumentException;
 use Alchemy\TaskManager\Exception\LogicException;
 use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\TaskManager\Event\JobExceptionEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -337,6 +338,7 @@ abstract class AbstractJob implements JobInterface
             call_user_func($this->createCallback($callback), $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
+            $this->dispatcher->dispatch(TaskManagerEvents::EXCEPTION, new JobExceptionEvent($this, $e));
             throw $e;
         }
 
