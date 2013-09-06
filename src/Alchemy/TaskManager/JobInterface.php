@@ -20,7 +20,6 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 interface JobInterface extends LoggerAwareInterface
 {
     const MODE_STOP_UNLESS_SIGNAL = 1;
-    const MODE_STOP_ON_DURATION = 4;
 
     const STATUS_STARTED = 'started';
     const STATUS_STOPPING = 'stopping';
@@ -49,30 +48,6 @@ interface JobInterface extends LoggerAwareInterface
      * @api
      */
     public function setId($id);
-
-    /**
-     * Sets the maximum duration of a job, if the MODE_STOP_ON_DURATION is
-     * enabled.
-     *
-     * @param float $duration
-     *
-     * @return JobInterface
-     *
-     * @throws InvalidArgumentException
-     *
-     * @api
-     */
-    public function setMaxDuration($duration);
-
-    /**
-     * Returns the maximum duration of a the Job, if the MODE_STOP_ON_DURATION
-     * is enabled.
-     *
-     * @return float
-     *
-     * @api
-     */
-    public function getMaxDuration();
 
     /**
      * Sets the period to wait for a SIGCONT signal otherwise the job
@@ -178,7 +153,7 @@ interface JobInterface extends LoggerAwareInterface
      * @return JobInterface
      */
     public function addSubscriber(EventSubscriberInterface $subscriber);
-    
+
     /**
      * Stops the job.
      *

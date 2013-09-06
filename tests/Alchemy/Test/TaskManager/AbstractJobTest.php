@@ -6,8 +6,9 @@ use Alchemy\TaskManager\AbstractJob;
 use Alchemy\TaskManager\JobDataInterface;
 use Alchemy\TaskManager\JobInterface;
 use Alchemy\Test\TaskManager\PhpProcess;
-use Symfony\Component\Finder\Finder;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
+use Symfony\Component\Finder\Finder;
 
 class AbstractJobTest extends \PHPUnit_Framework_TestCase
 {
@@ -158,27 +159,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
             array(SIGTERM),
             array(SIGINT),
         );
-    }
-
-    /**
-     * @dataProvider provideVariousDurationValues
-     */
-    public function testMaxDuration($max)
-    {
-        $script = $this->getNonStoppingScript(0.1, '', '$job->enableStopMode(Alchemy\TaskManager\JobInterface::MODE_STOP_ON_DURATION);$job->setMaxDuration('.$max.');');
-        $process1 = new PhpProcess($script);
-
-        $start = microtime(true);
-        $process1->run();
-
-        $duration = microtime(true) - $start;
-
-        $this->assertLessThan(0.2, abs($max-$duration));
-    }
-
-    public function provideVariousDurationValues()
-    {
-        return array(array(0.3), array(0.5), array(0.7));
     }
 
     /**
@@ -378,21 +358,13 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testModeGettersAndSetters()
     {
         $job = new JobTest();
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->enableStopMode(JobInterface::MODE_STOP_ON_DURATION);
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
         $job->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertTrue($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
-        $job->disableStopMode(JobInterface::MODE_STOP_ON_DURATION);
         $job->disableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL));
     }
 
@@ -426,30 +398,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job->isStopMode('invalid');
     }
 
-    public function testMaxDurationGettersAndSetters()
-    {
-        $job = new JobTest();
-        $this->assertSame(0, $job->getMaxDuration());
-        $this->assertSame($job, $job->setMaxDuration(24));
-        $this->assertSame((float) 24, $job->getMaxDuration());
-    }
-
-    /**
-     * @dataProvider provideInvalidDurationValues
-     * @expectedException Alchemy\TaskManager\Exception\InvalidArgumentException
-     * @expectedExceptionMessage Maximum duration should be a positive value.
-     */
-    public function testInvalidMaxDurationValues($duration)
-    {
-        $job = new JobTest();
-        $job->setMaxDuration($duration);
-    }
-
-    public function provideInvalidDurationValues()
-    {
-        return array(array(0), array(-20));
-    }
-
     public function testSignalPeriodGettersAndSetters()
     {
         $job = new JobTest();
@@ -479,9 +427,8 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
 
         $job = new JobTest();
+        $job->addSubscriber(new DurationLimitSubscriber(0.2));
         $job->setId('Id');
-        $job->enableStopMode(JobTest::MODE_STOP_ON_DURATION);
-        $job->setMaxDuration(0.1);
         $job->run($data);
 
         $this->assertSame($data, $job->getData());
@@ -554,19 +501,14 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     {
         $job = new JobTest();
         $job->setId('Id');
-        $job->enableStopMode(JobTest::MODE_STOP_ON_DURATION);
-        $job->setMaxDuration(0.1);
+        $job->addSubscriber(new DurationLimitSubscriber(0.1));
         $job->run();
     }
 
     public function testThatSettingAStopParameterEnablesTheStopMode()
     {
         $job = new JobTest();
-        $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
         $this->assertFalse($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
-        $job->setMaxDuration(3);
-        $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_ON_DURATION));
-        $job->disableStopMode(JobTest::MODE_STOP_ON_DURATION);
         $job->setSignalPeriod(2);
         $this->assertTrue($job->isStopMode(JobTest::MODE_STOP_UNLESS_SIGNAL));
     }

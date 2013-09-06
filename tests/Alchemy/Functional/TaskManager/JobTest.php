@@ -31,4 +31,25 @@ class JobTest extends FunctionalTestCase
             array(20, 10, 2),
         );
     }
+
+    /**
+     * @dataProvider provideVariousDurationValues
+     */
+    public function testMaxDuration($max)
+    {
+        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber('.$max.'));');
+        $process1 = new PhpProcess($script);
+        
+        $start = microtime(true);
+        $process1->run();
+
+        $duration = microtime(true) - $start;
+
+        $this->assertLessThan(0.2, abs($max-$duration));
+    }
+
+    public function provideVariousDurationValues()
+    {
+        return array(array(0.3), array(0.5), array(0.7));
+    }
 }

@@ -29,8 +29,6 @@ abstract class AbstractJob implements JobInterface
     /** @var null|float */
     private $startTime = null;
     /** @var null|float */
-    private $maxDuration = 0;
-    /** @var null|float */
     private $signalPeriod = 0.5;
     /** @var integer */
     private $mode = 0;
@@ -179,29 +177,6 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function getMaxDuration()
-    {
-        return $this->maxDuration;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setMaxDuration($duration)
-    {
-        if (0 >= $duration) {
-            throw new InvalidArgumentException('Maximum duration should be a positive value.');
-        }
-
-        $this->enableStopMode(static::MODE_STOP_ON_DURATION);
-        $this->maxDuration = (float) $duration;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getSignalPeriod()
     {
         return $this->signalPeriod;
@@ -340,7 +315,6 @@ abstract class AbstractJob implements JobInterface
             return;
         }
         $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
-        $this->checkDuration();
         $this->checkSignals();
     }
 
@@ -498,23 +472,6 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * In case the mode MODE_STOP_ON_DURATION is enabled, checks for the
-     * current duration of the job. Stops the job if its current duration is
-     * longer than the maximum allowed duration.
-     */
-    private function checkDuration()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_ON_DURATION) || null === $this->maxDuration) {
-            return;
-        }
-
-        if ((microtime(true) - $this->startTime) > $this->maxDuration) {
-            $this->log('debug', sprintf('Max duration reached (%d s.), stopping.', $this->maxDuration));
-            $this->stop();
-        }
-    }
-
-    /**
      * Return the file path to the lock file for this job.
      *
      * @return string
@@ -541,7 +498,7 @@ abstract class AbstractJob implements JobInterface
      */
     private function validateMode($mode)
     {
-        if (!in_array($mode, array(static::MODE_STOP_ON_DURATION, static::MODE_STOP_UNLESS_SIGNAL), true)) {
+        if (!in_array($mode, array(static::MODE_STOP_UNLESS_SIGNAL), true)) {
             throw new InvalidArgumentException('Invalid mode value.');
         }
 
