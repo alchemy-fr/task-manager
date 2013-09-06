@@ -40,6 +40,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         {
             public function __construct()
             {
+                parent::__construct();
                 $this->setId("laal");
                 $this->setLockDirectory("' . $this->lockDir . '");
             }
@@ -74,9 +75,10 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
             public function __construct()
             {
+                parent::__construct();
                 $this->setId("laal");
                 $this->setLockDirectory("' . $this->lockDir . '");
-                    $this->setMaxMemory(10*1024*1024);
+                $this->setMaxMemory(10*1024*1024);
             }
 
             protected function doRun(JobDataInterface $data = null)
@@ -248,6 +250,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
             public function __construct()
             {
+                parent::__construct();
                 $this->setId("laal");
                 $this->setLockDirectory("' . $this->lockDir . '");
             }
@@ -293,6 +296,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
             public function __construct()
             {
+                parent::__construct();
                 $this->setId("laal");
                 $this->setLockDirectory("' . $this->lockDir . '");
             }

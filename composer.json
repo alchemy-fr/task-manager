@@ -18,6 +18,7 @@
     ],
     "require": {
         "php"                      : ">=5.3.3",
+        "symfony/event-dispatcher" : "~2.0",
         "symfony/symfony"          : "dev-process-manager as 2.4.x-dev",
         "ext-zmq"                  : "*"
     },

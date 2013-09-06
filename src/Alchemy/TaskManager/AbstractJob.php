@@ -13,7 +13,11 @@ namespace Alchemy\TaskManager;
 
 use Alchemy\TaskManager\Exception\InvalidArgumentException;
 use Alchemy\TaskManager\Exception\LogicException;
+use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 abstract class AbstractJob implements JobInterface
 {
@@ -39,6 +43,15 @@ abstract class AbstractJob implements JobInterface
     private $lockDir;
     /** @var LockFile */
     private $lockFile;
+    private $dispatcher;
+    
+    public function __construct(EventDispatcherInterface $dispatcher = null)
+    {
+        if (null === $dispatcher) {
+            $dispatcher = new EventDispatcher();
+        }
+        $this->dispatcher = $dispatcher;
+    }
 
     public function __destruct()
     {
@@ -252,12 +265,14 @@ abstract class AbstractJob implements JobInterface
     final public function run(JobDataInterface $data = null, $callback = null)
     {
         declare(ticks=1);
+        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
         $this->setup();
         while (static::STATUS_STARTED === $this->status) {
             $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
-
+        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
+        
         return $this->cleanup();
     }
 
@@ -277,10 +292,13 @@ abstract class AbstractJob implements JobInterface
     {
         declare(ticks=1);
 
-        return $this
-            ->setup()
-            ->doRunOrCleanup($data, $callback)
-            ->cleanup();
+        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
+        $this->setup();
+        $this->doRunOrCleanup($data, $callback);
+        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
+        $this->cleanup();
+        
+        return $this;
     }
 
     /**
@@ -322,6 +340,7 @@ abstract class AbstractJob implements JobInterface
      */
     public function tickHandler()
     {
+        $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
         $this->checkDuration();
         $this->checkSignals();
         $this->checkMemory();
