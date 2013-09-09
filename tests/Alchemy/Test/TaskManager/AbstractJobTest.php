@@ -39,15 +39,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
-            private $data;
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
             protected function doRun(JobDataInterface $data = null)
             {
             }
@@ -85,15 +76,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
-            private $data;
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
             protected function doRun(JobDataInterface $data = null)
             {
                 echo "loop\n";
@@ -120,15 +102,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
-            private $data;
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
             protected function doRun(JobDataInterface $data = null)
             {
                 '.($throwException ? 'throw new \Exception("failure");' : '').'
@@ -194,14 +167,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertContains(TaskManagerEvents::EXCEPTION, $data);
     }
 
-    public function testLockDirectoryGettersAndSetters()
-    {
-        $job = new JobTest();
-        $this->assertSame(sys_get_temp_dir(), $job->getLockDirectory());
-        $this->assertSame($job, $job->setLockDirectory(__DIR__));
-        $this->assertSame(__DIR__, $job->getLockDirectory());
-    }
-
     public function testLoggerGettersAndSetters()
     {
         $logger = $this->getMock('Psr\Log\LoggerInterface');
@@ -218,7 +183,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $job = new JobTest();
         $job->addSubscriber(new DurationLimitSubscriber(0.2));
-        $job->setId('Id');
         $job->run($data);
 
         $this->assertSame($data, $job->getData());
@@ -229,7 +193,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
 
         $job = new JobTest();
-        $job->setId('Id');
         $start = microtime(true);
         $this->assertSame($job, $job->singleRun($data));
 
@@ -269,7 +232,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
 
         $job = new JobTest();
-        $job->setId('Id');
         $collector = array();
         $job->addListener(TaskManagerEvents::START, function () use (&$collector) {
             $collector[] = TaskManagerEvents::START;
@@ -292,7 +254,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
 
         $job = new JobFailureTest();
-        $job->setId('Id');
         $collector = array();
         $job->addListener(TaskManagerEvents::START, function () use (&$collector) {
             $collector[] = TaskManagerEvents::START;
@@ -321,7 +282,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testDoRunWithoutdataIsOk()
     {
         $job = new JobTest();
-        $job->setId('Id');
         $job->addSubscriber(new DurationLimitSubscriber(0.1));
         $job->run();
     }
@@ -329,7 +289,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     public function testJobCanBeRestartedAfterAFailure()
     {
         $job = new JobFailureTest();
-        $job->setId('failure-id');
         try {
             $job->run();
             $this->fail('A JobFailureException should have been raised');
@@ -337,7 +296,6 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         }
         $job = new JobFailureTest();
-        $job->setId('failure-id');
         $this->setExpectedException('Alchemy\Test\TaskManager\JobFailureException', 'Total failure.');
         $job->run();
     }

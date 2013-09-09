@@ -34,24 +34,15 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
-            private $data;
-
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
             protected function doRun(JobDataInterface $data = null)
             {
-            declare(ticks=1);
+                declare(ticks=1);
                 '.$extra.'
                 usleep('.($time*10).'*100000);
             }
         }
 
-            declare(ticks=1);
+        declare(ticks=1);
         $job = new Job();
         '.$conf.'
         assert($job === $job->run());
@@ -67,13 +58,6 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
-            public function __construct()
-            {
-                parent::__construct();
-                $this->setId("laal");
-                $this->setLockDirectory("' . $this->lockDir . '");
-            }
-
             protected function doRun(JobDataInterface $data = null)
             {
                 $n = 0;
@@ -88,6 +72,7 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 
         $job = new Job();
         $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber());
+        $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\LockFileSubscriber("id", null, "'.$this->lockDir.'"));
         $job->run();
         ';
     }

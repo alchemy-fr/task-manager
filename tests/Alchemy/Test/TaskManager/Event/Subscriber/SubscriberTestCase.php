@@ -13,6 +13,7 @@ abstract class SubscriberTestCase extends \PHPUnit_Framework_TestCase
                 TaskManagerEvents::START,
                 TaskManagerEvents::TICK,
                 TaskManagerEvents::STOP,
+                TaskManagerEvents::EXCEPTION,
             ));
         }
     }

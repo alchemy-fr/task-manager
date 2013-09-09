@@ -24,59 +24,6 @@ interface JobInterface extends LoggerAwareInterface
     const STATUS_STOPPED = 'stopped';
 
     /**
-     * Gets the unique Id of the Job.
-     *
-     * This unique id is used to prevent running the same job concurrently.
-     *
-     * @return string
-     *
-     * @api
-     */
-    public function getId();
-
-    /**
-     * Sets the unique Id of the Job.
-     *
-     * This unique id is used to prevent running the same job concurrently.
-     *
-     * @param string $id
-     *
-     * @return JobInterface
-     *
-     * @api
-     */
-    public function setId($id);
-
-    /**
-     * Gets the lock directory.
-     *
-     * The lock directory is used to store lock file which prevent running
-     * a job with the same Id multiple times.
-     * If no lock directory set, the system temporary directory is returned.
-     *
-     * @return string
-     *
-     * @api
-     */
-    public function getLockDirectory();
-
-    /**
-     * Sets the lock directory.
-     *
-     * The lock directory is used to store lock file which prevent running
-     * a job with the same Id multiple times.
-     *
-     * @param string $directory
-     *
-     * @return JobInterface
-     *
-     * @throws InvalidArgumentException In case the directory does not exist or is not writeable.
-     *
-     * @api
-     */
-    public function setLockDirectory($directory);
-
-    /**
      * Adds a listener to the job.
      *
      * @param string   $eventName

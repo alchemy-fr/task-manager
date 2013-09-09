@@ -11,8 +11,6 @@
 
 namespace Alchemy\TaskManager;
 
-use Alchemy\TaskManager\Exception\InvalidArgumentException;
-use Alchemy\TaskManager\Exception\LogicException;
 use Alchemy\TaskManager\Event\JobEvent;
 use Alchemy\TaskManager\Event\JobExceptionEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
@@ -23,16 +21,11 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 abstract class AbstractJob implements JobInterface
 {
-    /** @var string */
-    private $id;
     /** @var null|string */
     private $status;
     /** @var null|LoggerInterface */
     private $logger;
-    /** @var null|string */
-    private $lockDir;
-    /** @var LockFile */
-    private $lockFile;
+    /** @var EventDispatcherInterface */
     private $dispatcher;
 
     public function __construct(EventDispatcherInterface $dispatcher = null)
@@ -64,53 +57,6 @@ abstract class AbstractJob implements JobInterface
     public function addSubscriber(EventSubscriberInterface $subscriber)
     {
         $this->dispatcher->addSubscriber($subscriber);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getLockDirectory()
-    {
-        if (null === $this->lockDir) {
-            return sys_get_temp_dir();
-        }
-
-        return $this->lockDir;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setLockDirectory($directory)
-    {
-        if (!is_dir($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be a directory.');
-        }
-        if (!is_writable($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be writeable.');
-        }
-
-        $this->lockDir = rtrim($directory, DIRECTORY_SEPARATOR);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setId($id)
-    {
-        $this->id = (string) $id;
 
         return $this;
     }
@@ -287,17 +233,13 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * Sets up the job, add locks and reister tick handlers.
+     * Sets up the job and register tick handlers.
      *
      * @return JobInterface
      */
     private function setup()
     {
-        $this->lockFile = new LockFile($this->getLockFilePath());
-        $this->lockFile->lock();
-
         $this->status = static::STATUS_STARTED;
-
         register_tick_function(array($this, 'tickHandler'), true);
 
         return $this;
@@ -306,15 +248,10 @@ abstract class AbstractJob implements JobInterface
     /**
      * Cleanups a job.
      *
-     * Removes locks and handlers.
-     *
      * @return JobInterface
      */
     private function cleanup()
     {
-        if (null !== $this->lockFile) {
-            $this->lockFile->unlock();
-        }
         unregister_tick_function(array($this, 'tickHandler'));
         $this->status = static::STATUS_STOPPED;
 
@@ -359,21 +296,5 @@ abstract class AbstractJob implements JobInterface
         }
 
         return function () {};
-    }
-
-    /**
-     * Return the file path to the lock file for this job.
-     *
-     * @return string
-     *
-     * @throws LogicException In case no Id has been set.
-     */
-    private function getLockFilePath()
-    {
-        if (null === $this->getId()) {
-            throw new LogicException('An ID must be set to the JOB');
-        }
-
-        return $this->getLockDirectory() . '/task_' . $this->getID() . '.lock';
     }
 }
