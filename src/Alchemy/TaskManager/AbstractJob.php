@@ -11,34 +11,30 @@
 
 namespace Alchemy\TaskManager;
 
-use Alchemy\TaskManager\Exception\InvalidArgumentException;
-use Alchemy\TaskManager\Exception\LogicException;
+use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\TaskManager\Event\JobExceptionEvent;
+use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 abstract class AbstractJob implements JobInterface
 {
-    /** @var string */
-    private $id;
-    /** @var null|float */
-    private $lastSignalTime = null;
-    /** @var null|float */
-    private $startTime = null;
-    /** @var null|float */
-    private $maxDuration = 0;
-    /** @var null|float */
-    private $signalPeriod = 0.5;
-    /** @var null|integer */
-    private $maxMemory = 32E6;
-    /** @var integer */
-    private $mode = 0;
     /** @var null|string */
     private $status;
     /** @var null|LoggerInterface */
     private $logger;
-    /** @var null|string */
-    private $lockDir;
-    /** @var LockFile */
-    private $lockFile;
+    /** @var EventDispatcherInterface */
+    private $dispatcher;
+
+    public function __construct(EventDispatcherInterface $dispatcher = null)
+    {
+        if (null === $dispatcher) {
+            $dispatcher = new EventDispatcher();
+        }
+        $this->dispatcher = $dispatcher;
+    }
 
     public function __destruct()
     {
@@ -48,28 +44,9 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function getLockDirectory()
+    public function addListener($eventName, $listener)
     {
-        if (null === $this->lockDir) {
-            return sys_get_temp_dir();
-        }
-
-        return $this->lockDir;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setLockDirectory($directory)
-    {
-        if (!is_dir($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be a directory.');
-        }
-        if (!is_writable($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be writeable.');
-        }
-
-        $this->lockDir = rtrim($directory, DIRECTORY_SEPARATOR);
+        $this->dispatcher->addListener($eventName, $listener);
 
         return $this;
     }
@@ -77,17 +54,9 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function getId()
+    public function addSubscriber(EventSubscriberInterface $subscriber)
     {
-        return $this->id;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setId($id)
-    {
-        $this->id = (string) $id;
+        $this->dispatcher->addSubscriber($subscriber);
 
         return $this;
     }
@@ -114,104 +83,6 @@ abstract class AbstractJob implements JobInterface
     public function getLogger()
     {
         return $this->logger;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function enableStopMode($mode)
-    {
-        $this->mode |= $this->validateMode($mode);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function disableStopMode($mode)
-    {
-        $this->mode = $this->mode & ~$this->validateMode($mode);
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function isStopMode($mode)
-    {
-        return (boolean) ($this->mode & $this->validateMode($mode));
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMaxDuration()
-    {
-        return $this->maxDuration;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setMaxDuration($duration)
-    {
-        if (0 >= $duration) {
-            throw new InvalidArgumentException('Maximum duration should be a positive value.');
-        }
-
-        $this->enableStopMode(static::MODE_STOP_ON_DURATION);
-        $this->maxDuration = (float) $duration;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getMaxMemory()
-    {
-        return $this->maxMemory;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setMaxMemory($memory)
-    {
-        if (0 >= $memory) {
-            throw new InvalidArgumentException('Maximum memory should be a positive value.');
-        }
-
-        $this->enableStopMode(static::MODE_STOP_ON_MEMORY);
-        $this->maxMemory = (integer) $memory;
-
-        return $this;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSignalPeriod()
-    {
-        return $this->signalPeriod;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setSignalPeriod($period)
-    {
-        // use 3x the step used for pause
-        if (0.15 > $period) {
-            throw new InvalidArgumentException('Signal period should be greater than 0.15 s.');
-        }
-
-        $this->enableStopMode(JobInterface::MODE_STOP_UNLESS_SIGNAL);
-        $this->signalPeriod = (float) $period;
-
-        return $this;
     }
 
     /**
@@ -252,11 +123,13 @@ abstract class AbstractJob implements JobInterface
     final public function run(JobDataInterface $data = null, $callback = null)
     {
         declare(ticks=1);
+        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
         $this->setup();
         while (static::STATUS_STARTED === $this->status) {
             $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
+        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
 
         return $this->cleanup();
     }
@@ -277,10 +150,13 @@ abstract class AbstractJob implements JobInterface
     {
         declare(ticks=1);
 
-        return $this
-            ->setup()
-            ->doRunOrCleanup($data, $callback)
-            ->cleanup();
+        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
+        $this->setup();
+        $this->doRunOrCleanup($data, $callback);
+        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
+        $this->cleanup();
+
+        return $this;
     }
 
     /**
@@ -291,30 +167,8 @@ abstract class AbstractJob implements JobInterface
         if ($this->isStarted()) {
             $this->status = static::STATUS_STOPPING;
         }
-        
-        return $this;
-    }
 
-    /**
-     * Signal handler for the job.
-     *
-     * @param integer $signal
-     */
-    public function signalHandler($signal)
-    {
-        switch ($signal) {
-            case SIGCONT:
-                $this->lastSignalTime = microtime(true);
-                break;
-            case SIGTERM:
-                $this->log('info', 'Caught SIGTERM signal, stopping');
-                $this->stop();
-                break;
-            case SIGINT:
-                $this->log('info', 'Caught SIGINT signal, stopping');
-                $this->stop();
-                break;
-        }
+        return $this;
     }
 
     /**
@@ -322,9 +176,10 @@ abstract class AbstractJob implements JobInterface
      */
     public function tickHandler()
     {
-        $this->checkDuration();
-        $this->checkSignals();
-        $this->checkMemory();
+        if (!$this->isRunning()) {
+            return;
+        }
+        $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
     }
 
     /**
@@ -378,22 +233,14 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * Sets up the job, add locks and reister tick handlers.
+     * Sets up the job and register tick handlers.
      *
      * @return JobInterface
      */
     private function setup()
     {
-        $this->lockFile = new LockFile($this->getLockFilePath());
-        $this->lockFile->lock();
-
         $this->status = static::STATUS_STARTED;
-        $this->startTime = microtime(true);
-
         register_tick_function(array($this, 'tickHandler'), true);
-        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
-        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
-        pcntl_signal(SIGINT, array($this, 'signalHandler'));
 
         return $this;
     }
@@ -401,19 +248,11 @@ abstract class AbstractJob implements JobInterface
     /**
      * Cleanups a job.
      *
-     * Removes locks and handlers.
-     *
      * @return JobInterface
      */
     private function cleanup()
     {
-        if (null !== $this->lockFile) {
-            $this->lockFile->unlock();
-        }
         unregister_tick_function(array($this, 'tickHandler'));
-        pcntl_signal(SIGINT, function () {});
-        pcntl_signal(SIGCONT, function () {});
-        pcntl_signal(SIGTERM, function () {});
         $this->status = static::STATUS_STOPPED;
 
         return $this;
@@ -436,6 +275,7 @@ abstract class AbstractJob implements JobInterface
             call_user_func($this->createCallback($callback), $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
+            $this->dispatcher->dispatch(TaskManagerEvents::EXCEPTION, new JobExceptionEvent($this, $e));
             throw $e;
         }
 
@@ -456,104 +296,5 @@ abstract class AbstractJob implements JobInterface
         }
 
         return function () {};
-    }
-
-    /**
-     * In case the mode MODE_STOP_UNLESS_SIGNAL is enabled, checks for the
-     * latest received signal. Stops the job if no signal received in the
-     * latest period.
-     */
-    private function checkSignals()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_UNLESS_SIGNAL)) {
-            return;
-        }
-        if (static::STATUS_STARTED !== $this->status) {
-            return;
-        }
-
-        if (null === $this->lastSignalTime) {
-            if ((microtime(true) - $this->startTime) > $this->signalPeriod) {
-                $this->log('debug', sprintf('No signal received since start-time (max period is %s s.), stopping.', $this->signalPeriod));
-                $this->stop();
-            }
-        } elseif ((microtime(true) - $this->lastSignalTime) > $this->signalPeriod) {
-            $this->log('debug', sprintf('No signal received since %s, (max period is %s s.), stopping.', (microtime(true) - $this->lastSignalTime), $this->signalPeriod));
-            $this->stop();
-        }
-    }
-
-    /**
-     * In case the mode MODE_STOP_ON_MEMORY is enabled, checks for the
-     * amount of memory used. Stops the job if the more thand the maximum
-     * allowed amount of memory is used.
-     */
-    private function checkMemory()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_ON_MEMORY) || null === $this->maxMemory) {
-            return;
-        }
-        if (static::STATUS_STARTED !== $this->status) {
-            return;
-        }
-
-        if (memory_get_usage() > $this->maxMemory) {
-            $this->log('debug', sprintf('Max memory reached (%d o.), stopping.', $this->maxMemory));
-            $this->stop();
-        }
-    }
-
-    /**
-     * In case the mode MODE_STOP_ON_DURATION is enabled, checks for the
-     * current duration of the job. Stops the job if its current duration is
-     * longer than the maximum allowed duration.
-     */
-    private function checkDuration()
-    {
-        if (!$this->isStopMode(static::MODE_STOP_ON_DURATION) || null === $this->maxDuration) {
-            return;
-        }
-        if (static::STATUS_STARTED !== $this->status) {
-            return;
-        }
-
-        if ((microtime(true) - $this->startTime) > $this->maxDuration) {
-            $this->log('debug', sprintf('Max duration reached (%d s.), stopping.', $this->maxDuration));
-            $this->stop();
-        }
-    }
-
-    /**
-     * Return the file path to the lock file for this job.
-     *
-     * @return string
-     *
-     * @throws LogicException In case no Id has been set.
-     */
-    private function getLockFilePath()
-    {
-        if (null === $this->getId()) {
-            throw new LogicException('An ID must be set to the JOB');
-        }
-
-        return $this->getLockDirectory() . '/task_' . $this->getID() . '.lock';
-    }
-
-    /**
-     * Validates a stop mode.
-     *
-     * @param integer $mode One of the MODE_STOP_* constant.
-     *
-     * @return integer The validated mode
-     *
-     * @throws InvalidArgumentException In case the mode is invalid
-     */
-    private function validateMode($mode)
-    {
-        if (!in_array($mode, array(static::MODE_STOP_ON_DURATION, static::MODE_STOP_ON_MEMORY, static::MODE_STOP_UNLESS_SIGNAL), true)) {
-            throw new InvalidArgumentException('Invalid mode value.');
-        }
-
-        return $mode;
     }
 }

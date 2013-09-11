@@ -18,6 +18,8 @@
     ],
     "require": {
         "php"                      : ">=5.3.3",
+        "neutron/signal-handler"   : "~1.0",
+        "symfony/event-dispatcher" : "~2.0",
         "symfony/symfony"          : "dev-process-manager as 2.4.x-dev",
         "ext-zmq"                  : "*"
     },
@@ -27,7 +29,6 @@
             "url": "https://github.com/romainneutron/symfony"
         }
     ],
-    "minimum-stability": "dev",
     "require-dev": {
         "monolog/monolog"          : "~1.0",
         "phpunit/phpunit"          : "~3.7",
