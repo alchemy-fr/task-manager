@@ -4,6 +4,7 @@ namespace Alchemy\Test\TaskManager\Event\Subscriber;
 
 use Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
+use Neutron\SignalHandler\SignalHandler;
 
 class StopSignalSubscriberTest extends SubscriberTestCase
 {
@@ -19,10 +20,13 @@ class StopSignalSubscriberTest extends SubscriberTestCase
         $logger = $this->getMock('Psr\Log\LoggerInterface');
         $logger->expects($this->once())->method('info');
 
-        $subscriber = new StopSignalSubscriber($logger);
+        $subscriber = new StopSignalSubscriber(SignalHandler::getInstance(), $logger);
         $subscriber->onJobStart(new JobEvent($job));
         declare(ticks=1);
         posix_kill(getmypid(), $signal);
+        // required as the job is a mock, not running.
+        // the handler must be removed after the signal (normally done by event).
+        $subscriber->onJobStop(new JobEvent($job));
     }
 
     /**
@@ -34,10 +38,13 @@ class StopSignalSubscriberTest extends SubscriberTestCase
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $subscriber = new StopSignalSubscriber();
+        $subscriber = new StopSignalSubscriber(SignalHandler::getInstance());
         $subscriber->onJobStart(new JobEvent($job));
         declare(ticks=1);
         posix_kill(getmypid(), $signal);
+        // required as the job is a mock, not running.
+        // the handler must be removed after the signal (normally done by event).
+        $subscriber->onJobStop(new JobEvent($job));
     }
 
     /**
@@ -49,10 +56,13 @@ class StopSignalSubscriberTest extends SubscriberTestCase
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
-        $subscriber = new StopSignalSubscriber();
+        $subscriber = new StopSignalSubscriber(SignalHandler::getInstance());
         $subscriber->onJobStart(new JobEvent($job));
         declare(ticks=1);
         posix_kill(getmypid(), $signal);
+        // required as the job is a mock, not running.
+        // the handler must be removed after the signal (normally done by event).
+        $subscriber->onJobStop(new JobEvent($job));
     }
 
     public function provideHandledSignals()
@@ -62,6 +72,6 @@ class StopSignalSubscriberTest extends SubscriberTestCase
 
     protected function getSubscriber()
     {
-        return new StopSignalSubscriber();
+        return new StopSignalSubscriber(SignalHandler::getInstance());
     }
 }

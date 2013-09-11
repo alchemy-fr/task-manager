@@ -13,6 +13,7 @@ namespace Alchemy\TaskManager\Event\Subscriber;
 
 use Alchemy\TaskManager\Event\JobEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Neutron\SignalHandler\SignalHandler;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -22,10 +23,14 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class StopSignalSubscriber implements EventSubscriberInterface
 {
     private $logger;
+    private $signalHandler;
+    private $namespace;
 
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(SignalHandler $signalHandler, LoggerInterface $logger = null)
     {
         $this->logger = $logger;
+        $this->signalHandler = $signalHandler;
+        $this->namespace = uniqid('stopsignal', true) . microtime(true);
     }
 
     public static function getSubscribedEvents()
@@ -49,13 +54,11 @@ class StopSignalSubscriber implements EventSubscriberInterface
             }
         };
 
-        pcntl_signal(SIGTERM, $callback);
-        pcntl_signal(SIGINT, $callback);
+        $this->signalHandler->register(array(SIGTERM, SIGINT), $callback, $this->namespace);
     }
 
     public function onJobStop(JobEvent $event)
     {
-        pcntl_signal(SIGTERM, function () {});
-        pcntl_signal(SIGINT, function () {});
+        $this->signalHandler->unregisterNamespace($this->namespace);
     }
 }

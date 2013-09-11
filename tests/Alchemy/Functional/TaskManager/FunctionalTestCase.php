@@ -71,7 +71,7 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
         }
 
         $job = new Job();
-        $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber());
+        $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber(Neutron\SignalHandler\SignalHandler::getInstance()));
         $job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\LockFileSubscriber("id", null, "'.$this->lockDir.'"));
         $job->run();
         ';

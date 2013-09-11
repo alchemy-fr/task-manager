@@ -60,7 +60,7 @@ class JobTest extends FunctionalTestCase
      */
     public function testPeriodicSignal($periodMilliseconds)
     {
-        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber('.($periodMilliseconds / 1000).'));');
+        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber(\Neutron\SignalHandler\SignalHandler::getInstance(), '.($periodMilliseconds / 1000).'));');
 
         $process1 = new PhpProcess($script);
         $process1->start();

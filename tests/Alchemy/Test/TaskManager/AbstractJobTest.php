@@ -114,7 +114,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         }
 
         $job = new Job();
-        $job->addSubscriber(new Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber());
+        $job->addSubscriber(new Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber(Neutron\SignalHandler\SignalHandler::getInstance()));
         $job->addListener(TaskManagerEvents::START, function () { echo "start\n"; });
         $job->addListener(TaskManagerEvents::TICK, function () { echo "tick\n"; });
         $job->addListener(TaskManagerEvents::STOP, function () { echo "stop\n"; });

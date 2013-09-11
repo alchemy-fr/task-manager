@@ -4,6 +4,7 @@ namespace Alchemy\Test\TaskManager\Event\Subscriber;
 
 use Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
+use Neutron\SignalHandler\SignalHandler;
 
 class SignalControlledSubscriberTest extends SubscriberTestCase
 {
@@ -14,7 +15,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
      */
     public function testWithInvalidPeriod($limit)
     {
-        new SignalControlledSubscriber($limit);
+        new SignalControlledSubscriber(SignalHandler::getInstance(), $limit);
     }
 
     public function provideInvalidPeriods()
@@ -28,7 +29,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $subscriber = new SignalControlledSubscriber(0.15);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
         $subscriber->onJobTick(new JobEvent($job));
     }
 
@@ -41,7 +42,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $logger = $this->getMock('Psr\Log\LoggerInterface');
         $logger->expects($this->once())->method('debug');
 
-        $subscriber = new SignalControlledSubscriber(0.15, $logger);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15, $logger);
         $subscriber->onJobStart(new JobEvent($job));
         usleep(150000);
         $subscriber->onJobTick(new JobEvent($job));
@@ -53,7 +54,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $subscriber = new SignalControlledSubscriber(0.15);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
         $subscriber->onJobStart(new JobEvent($job));
         usleep(150000);
         $subscriber->onJobTick(new JobEvent($job));
@@ -65,7 +66,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $subscriber = new SignalControlledSubscriber(0.15);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
         $subscriber->onJobStart(new JobEvent($job));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
@@ -90,7 +91,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
-        $subscriber = new SignalControlledSubscriber(0.15);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
         $subscriber->onJobStart(new JobEvent($job));
         usleep(150000);
         $subscriber->onJobTick(new JobEvent($job));
@@ -102,7 +103,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
-        $subscriber = new SignalControlledSubscriber(0.15);
+        $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
         $subscriber->onJobStart(new JobEvent($job));
         usleep(100000);
         $subscriber->onJobTick(new JobEvent($job));
@@ -110,6 +111,6 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
 
     protected function getSubscriber()
     {
-        return new SignalControlledSubscriber();
+        return new SignalControlledSubscriber(SignalHandler::getInstance());
     }
 }

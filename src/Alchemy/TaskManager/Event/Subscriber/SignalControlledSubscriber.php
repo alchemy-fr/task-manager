@@ -14,6 +14,7 @@ namespace Alchemy\TaskManager\Event\Subscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\Exception\InvalidArgumentException;
+use Neutron\SignalHandler\SignalHandler;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -23,11 +24,13 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class SignalControlledSubscriber implements EventSubscriberInterface
 {
     private $period;
+    private $handler;
+    private $namespace;
     private $logger;
     private $startTime;
     private $lastSignalTime;
 
-    public function __construct($period = 1, LoggerInterface $logger = null)
+    public function __construct(SignalHandler $handler, $period = 1, LoggerInterface $logger = null)
     {
         // use 3x the step used for pause
         if (0.15 > $period) {
@@ -36,6 +39,8 @@ class SignalControlledSubscriber implements EventSubscriberInterface
 
         $this->period = (float) $period;
         $this->logger = $logger;
+        $this->handler = $handler;
+        $this->namespace = uniqid('sigcontsignal', true) . microtime(true);
     }
 
     public static function getSubscribedEvents()
@@ -52,12 +57,12 @@ class SignalControlledSubscriber implements EventSubscriberInterface
     {
         $this->startTime = microtime(true);
         $this->lastSignalTime = null;
-        pcntl_signal(SIGCONT, array($this, 'signalHandler'));
+        $this->handler->register(SIGCONT, array($this, 'signalHandler'), $this->namespace);
     }
 
     public function onJobStop(JobEvent $event)
     {
-        pcntl_signal(SIGCONT, function () {});
+        $this->removeHandler();
         $this->startTime = null;
         $this->lastSignalTime = null;
     }
@@ -93,5 +98,10 @@ class SignalControlledSubscriber implements EventSubscriberInterface
         if (SIGCONT === $signal) {
             $this->lastSignalTime = microtime(true);
         }
+    }
+
+    private function removeHandler()
+    {
+        $this->handler->unregisterNamespace($this->namespace);
     }
 }
