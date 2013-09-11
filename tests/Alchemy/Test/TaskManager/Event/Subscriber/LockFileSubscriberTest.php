@@ -32,7 +32,7 @@ class LockFileSubscriberTest extends SubscriberTestCase
 
         $job = $this->getMock('Alchemy\TaskManager\JobInterface');
 
-        $subscriber = new LockFileSubscriber('id', null, $lockDir);
+        $subscriber = $this->getSubscriber();
         $finder = Finder::create();
         $this->assertCount(0, $finder->files()->in($lockDir));
         $subscriber->onJobStart(new JobEvent($job));

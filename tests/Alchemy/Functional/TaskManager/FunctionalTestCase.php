@@ -32,17 +32,17 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 
         use Alchemy\TaskManager\JobDataInterface;
 
+        declare(ticks=1);
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             protected function doRun(JobDataInterface $data = null)
             {
-                declare(ticks=1);
                 '.$extra.'
                 usleep('.($time*10).'*100000);
             }
         }
 
-        declare(ticks=1);
         $job = new Job();
         '.$conf.'
         assert($job === $job->run());
@@ -56,12 +56,13 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
 
         use Alchemy\TaskManager\JobDataInterface;
 
+        declare(ticks=1);
+
         class Job extends Alchemy\TaskManager\AbstractJob
         {
             protected function doRun(JobDataInterface $data = null)
             {
                 $n = 0;
-                declare(ticks=1);
                 while ($n < 60 && $this->getStatus() === static::STATUS_STARTED) {
                     usleep(10000);
                     $n++;
