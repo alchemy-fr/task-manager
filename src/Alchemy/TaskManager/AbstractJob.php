@@ -28,12 +28,13 @@ abstract class AbstractJob implements JobInterface
     /** @var null|LoggerInterface */
     private $logger;
 
-    public function __construct(EventDispatcherInterface $dispatcher = null)
+    public function __construct(EventDispatcherInterface $dispatcher = null, LoggerInterface $logger = null)
     {
         if (null === $dispatcher) {
             $dispatcher = new EventDispatcher();
         }
         $this->dispatcher = $dispatcher;
+        $this->logger = $logger;
     }
 
     public function __destruct()
