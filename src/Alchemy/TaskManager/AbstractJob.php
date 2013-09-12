@@ -167,6 +167,7 @@ abstract class AbstractJob implements JobInterface
     {
         if ($this->isStarted()) {
             $this->status = static::STATUS_STOPPING;
+            $this->dispatcher->dispatch(TaskManagerEvents::STOP_REQUEST, new JobEvent($this));
         }
 
         return $this;

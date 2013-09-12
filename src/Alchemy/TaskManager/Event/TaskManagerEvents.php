@@ -24,6 +24,11 @@ class TaskManagerEvents
     const TICK = 'tick';
 
     /**
+     * This event is triggered when the the stop method is called and the job is running.
+     */
+    const STOP_REQUEST = 'stop-request';
+
+    /**
      * This event is triggered when the job stops running.
      */
     const STOP = 'stop';

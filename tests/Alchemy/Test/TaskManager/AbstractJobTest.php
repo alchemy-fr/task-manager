@@ -76,6 +76,18 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $this->assertLessThan(0.1, microtime(true) - $start);
     }
 
+    public function testStopDispatchAnEventOnFirstCall()
+    {
+        $job = new JobTest();
+        $counter = 0;
+        $job->addListener(TaskManagerEvents::STOP_REQUEST, function () use (&$counter) { $counter++; });
+        $job->stop();
+        $this->assertEquals(0, $counter);
+        $job->addSubscriber(new DurationLimitSubscriber(0.1));
+        $job->run();
+        $this->assertEquals(1, $counter);
+    }
+
     private function getPauseAndLoopScript()
     {
         return '<?php
