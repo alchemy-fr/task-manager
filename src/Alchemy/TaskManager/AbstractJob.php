@@ -276,6 +276,7 @@ abstract class AbstractJob implements JobInterface
             call_user_func($this->createCallback($callback), $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
+            $this->log('error', sprintf('Error while running %s : %s', get_class($this), $e->getMessage()));
             $this->dispatcher->dispatch(TaskManagerEvents::EXCEPTION, new JobExceptionEvent($this, $e));
             throw $e;
         }
