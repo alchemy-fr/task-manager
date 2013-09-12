@@ -21,12 +21,12 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 abstract class AbstractJob implements JobInterface
 {
+    /** @var EventDispatcherInterface */
+    protected $dispatcher;
     /** @var null|string */
     private $status;
     /** @var null|LoggerInterface */
     private $logger;
-    /** @var EventDispatcherInterface */
-    private $dispatcher;
 
     public function __construct(EventDispatcherInterface $dispatcher = null)
     {

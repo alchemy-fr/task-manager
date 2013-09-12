@@ -8,6 +8,7 @@ use Alchemy\Test\TaskManager\PhpProcess;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\EventDispatcher\Event;
 
 class AbstractJobTest extends \PHPUnit_Framework_TestCase
 {
@@ -52,6 +53,14 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $job = new Job();
         $job->run();
         ';
+    }
+
+    public function testCustomEventsAreWelcomed()
+    {
+        $saidCoucou = false;
+        $job = new JobTestWithCustomEvent();
+        $job->addListener('coucou', function () use (&$saidCoucou) { $saidCoucou = true; });
+        $job->singleRun();
     }
 
     public function testStopWithinAPauseDoesNotWaitTheEndOfThePause()
@@ -313,6 +322,14 @@ class JobTest extends AbstractJob
     protected function doRun(JobDataInterface $data = null)
     {
         $this->data = $data;
+    }
+}
+
+class JobTestWithCustomEvent extends AbstractJob
+{
+    protected function doRun(JobDataInterface $data = null)
+    {
+        $this->dispatcher->dispatch('coucou', new Event());
     }
 }
 
