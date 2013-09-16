@@ -11,9 +11,10 @@
 
 namespace Alchemy\TaskManager;
 
-use Symfony\Component\Process\Manager\ProcessManager;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
+use Symfony\Component\Process\Manager\ProcessManager;
+use Symfony\Component\Process\ProcessInterface;
 
 class TaskManager implements LoggerAwareInterface
 {
@@ -121,6 +122,7 @@ class TaskManager implements LoggerAwareInterface
             $this->manager->signal(SIGCONT);
             $start = microtime(true);
             $this->poll();
+            $this->publishData();
             // sleep at list 10ms, at max 100ms
             usleep(max(0.1 - (microtime(true) - $start), 0.01) * 1E6);
         }
@@ -243,6 +245,23 @@ class TaskManager implements LoggerAwareInterface
             }
             $this->listener->send($recv);
             usleep(1000);
+        }
+    }
+
+    /**
+     * Publishes process data to ZMQ publisher socket.
+     */
+    private function publishData()
+    {
+        $data = array();
+        foreach ($this->manager->getManagedProcesses() as $name => $process) {
+            $data[$name] = array(
+                'status' => $process->getStatus(),
+                'pid'    => $process->getManagedProcess() instanceof ProcessInterface ? $process->getManagedProcess()->getPid() : null,
+            );
+        }
+        if (false === $this->publisher->send(json_encode($data), defined('\ZMQ::MODE_DONTWAIT') ? \ZMQ::MODE_DONTWAIT : ZMQ::MODE_NOBLOCK)) {
+            $this->logger->error('Unable to publish status, ZMQ is blocking');
         }
     }
 }
