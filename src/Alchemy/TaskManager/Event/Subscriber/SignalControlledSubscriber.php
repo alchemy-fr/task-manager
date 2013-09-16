@@ -76,13 +76,13 @@ class SignalControlledSubscriber implements EventSubscriberInterface
         if (null === $this->lastSignalTime) {
             if (null !== $this->startTime && (microtime(true) - $this->startTime) > $this->period) {
                 if (null !== $this->logger) {
-                    $this->logger->debug(sprintf('No signal received since start-time (max period is %s s.), stopping.', $this->period));
+                    $this->logger->info(sprintf('No signal received since start-time (max period is %s s.), stopping.', $this->period));
                 }
                 $event->getJob()->stop();
             }
         } elseif (null !== $this->startTime && (microtime(true) - $this->lastSignalTime) > $this->period) {
             if (null !== $this->logger) {
-                $this->logger->debug(sprintf('No signal received since %s, (max period is %s s.), stopping.', (microtime(true) - $this->lastSignalTime), $this->period));
+                $this->logger->info(sprintf('No signal received since %s, (max period is %s s.), stopping.', (microtime(true) - $this->lastSignalTime), $this->period));
             }
             $event->getJob()->stop();
         }
