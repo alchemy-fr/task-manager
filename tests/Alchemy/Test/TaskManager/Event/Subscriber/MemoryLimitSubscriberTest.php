@@ -29,7 +29,7 @@ class MemoryLimitSubscriberTest extends SubscriberTestCase
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $logger = $this->getMock('Psr\Log\LoggerInterface');
-        $logger->expects($this->once())->method('debug');
+        $logger->expects($this->once())->method('info')->with('Max memory reached (1 o.), stopping.');
 
         $subscriber = new MemoryLimitSubscriber(1, $logger);
         $subscriber->onJobTick(new JobEvent($job));
