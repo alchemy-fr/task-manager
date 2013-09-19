@@ -19,6 +19,7 @@ use Symfony\Component\Process\ProcessInterface;
 class TaskManager implements LoggerAwareInterface
 {
     const MESSAGE_PING = 'PING';
+    const MESSAGE_STATE = 'STATE';
     const MESSAGE_STOP = 'STOP';
     const MESSAGE_PROCESS_UPDATE = 'UPDATE';
 
@@ -34,18 +35,15 @@ class TaskManager implements LoggerAwareInterface
     private $manager;
     /** @var ZMQSocket */
     private $listener;
-    /** @var ZMQSocket */
-    private $publisher;
 
     private $lockFile;
     private $lockDir;
 
-    public function __construct(ZMQSocket $listener, ZMQSocket $publisher, LoggerInterface $logger, TaskListInterface $list)
+    public function __construct(ZMQSocket $listener, LoggerInterface $logger, TaskListInterface $list)
     {
         $this->list = $list;
         $this->logger = $logger;
         $this->listener = $listener;
-        $this->publisher = $publisher;
         $this->manager = new ProcessManager($logger, null, ProcessManager::STRATEGY_IGNORE, ProcessManager::STRATEGY_IGNORE);
     }
 
@@ -112,7 +110,6 @@ class TaskManager implements LoggerAwareInterface
     public function start()
     {
         $this->listener->bind();
-        $this->publisher->bind();
 
         $this->manager->setDaemon(true);
         $this->updateProcesses();
@@ -122,7 +119,6 @@ class TaskManager implements LoggerAwareInterface
             $this->manager->signal(SIGCONT);
             $start = microtime(true);
             $this->poll();
-            $this->publishData();
             // sleep at list 10ms, at max 100ms
             usleep(max(0.1 - (microtime(true) - $start), 0.01) * 1E6);
         }
@@ -147,9 +143,6 @@ class TaskManager implements LoggerAwareInterface
         if ($this->listener->isBound()) {
             $this->listener->unbind();
         }
-        if ($this->publisher->isBound()) {
-            $this->publisher->unbind();
-        }
         if (null !== $this->lockFile) {
             $this->lockFile->unlock();
         }
@@ -172,9 +165,6 @@ class TaskManager implements LoggerAwareInterface
             'listener_protocol'  => 'tcp',
             'listener_host'      => '127.0.0.1',
             'listener_port'      => 6660,
-            'publisher_protocol' => 'tcp',
-            'publisher_host'     => '127.0.0.1',
-            'publisher_port'     => 6661,
         ), $options);
 
         $context = new \ZMQContext();
@@ -184,14 +174,8 @@ class TaskManager implements LoggerAwareInterface
             $options['listener_host'],
             $options['listener_port']
         );
-        $publisher = new ZMQSocket(
-            $context, \ZMQ::SOCKET_PUB,
-            $options['publisher_protocol'],
-            $options['publisher_host'],
-            $options['publisher_port']
-        );
 
-        return new TaskManager($listener, $publisher, $logger, $list);
+        return new TaskManager($listener, $logger, $list);
     }
 
     /**
@@ -223,35 +207,35 @@ class TaskManager implements LoggerAwareInterface
     private function poll()
     {
         while (false !== $message = $this->listener->recv(\ZMQ::MODE_NOBLOCK)) {
+            $this->logger->debug(sprintf('Received message "%s"', $message));
             switch ($message) {
                 case static::MESSAGE_PING:
-                    $this->logger->debug(sprintf('Received message "%s"', $message));
-                    $recv = static::RESPONSE_PONG;
+                    $reply = static::RESPONSE_PONG;
+                    break;
+                case static::MESSAGE_STATE:
+                    $reply = $this->getStatusData();
                     break;
                 case static::MESSAGE_STOP:
-                    $this->logger->debug(sprintf('Received message "%s"', $message));
                     $this->manager->stop();
-                    $recv = static::RESPONSE_OK;
+                    $reply = static::RESPONSE_OK;
                     break;
                 case static::MESSAGE_PROCESS_UPDATE:
-                    $this->logger->debug(sprintf('Received message "%s"', $message));
                     $this->updateProcesses();
-                    $recv = static::RESPONSE_OK;
+                    $reply = static::RESPONSE_OK;
                     break;
                 default:
-                    $this->logger->error(sprintf('Invalid message "%s" received', $message));
-                    $recv = static::RESPONSE_INVALID_MESSAGE;
+                    $reply = static::RESPONSE_INVALID_MESSAGE;
                     break;
             }
-            $this->listener->send($recv);
+            $this->listener->send(json_encode(array("request" => $message, "reply" => $reply)));
             usleep(1000);
         }
     }
 
     /**
-     * Publishes process data to ZMQ publisher socket.
+     * Returns data about status.
      */
-    private function publishData()
+    private function getStatusData()
     {
         $data = array();
         foreach ($this->manager->getManagedProcesses() as $name => $process) {
@@ -260,8 +244,7 @@ class TaskManager implements LoggerAwareInterface
                 'pid'    => $process->getManagedProcess() instanceof ProcessInterface ? $process->getManagedProcess()->getPid() : null,
             );
         }
-        if (false === $this->publisher->send(json_encode($data), defined('\ZMQ::MODE_DONTWAIT') ? \ZMQ::MODE_DONTWAIT : ZMQ::MODE_NOBLOCK)) {
-            $this->logger->error('Unable to publish status, ZMQ is blocking');
-        }
+
+        return $data;
     }
 }

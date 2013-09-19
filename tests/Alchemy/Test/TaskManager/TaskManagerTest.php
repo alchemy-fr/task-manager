@@ -90,7 +90,42 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         ');
         $process->run();
         $server->stop();
-        $this->assertEquals('PONG', $process->getOutput());
+        $this->assertEquals('{"request":"PING","reply":"PONG"}', $process->getOutput());
+    }
+
+    public function testThatItRespondstoStateCommandWithStatus()
+    {
+        $serverScript = '<?php
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
+            '
+            .$this->getTaskImplementation().$this->getTaskListImplementation()
+            .'
+            use Alchemy\TaskManager\TaskManager;
+            use Alchemy\TaskManager\ZMQSocket;
+
+            $taskList = new TaskList(array());
+            $logger = new \Monolog\Logger("test");
+            $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
+            $manager = TaskManager::create($logger, $taskList);
+            $manager->start();
+        ';
+
+        $server = new PhpProcess($serverScript);
+        $server->start();
+
+        $process = new PhpProcess('<?php
+            require "'.__DIR__.'/../../../../tests/bootstrap.php";
+            use Alchemy\TaskManager\TaskManager;
+
+            $client = new \ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REQ);
+            $client->connect("tcp://127.0.0.1:6660");
+            $client->send(TaskManager::MESSAGE_STATE);
+            $message = $client->recv();
+            echo $message;
+        ');
+        $process->run();
+        $server->stop();
+        $this->assertEquals('{"request":"STATE","reply":[]}', $process->getOutput());
     }
 
     public function testMultipleStartsAndStops()
