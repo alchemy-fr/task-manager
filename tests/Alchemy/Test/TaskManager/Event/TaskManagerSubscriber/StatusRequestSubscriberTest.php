@@ -2,6 +2,7 @@
 
 namespace Alchemy\Test\TaskManager\Event\TaskManagerSubscriber;
 
+use Alchemy\TaskManager\Event\StateFormater;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusRequestSubscriber;
 use Alchemy\TaskManager\TaskManager;
 use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
@@ -32,6 +33,6 @@ class StatusRequestSubscriberTest extends SubscriberTestCase
 
     protected function getSubscriber()
     {
-        return new StatusRequestSubscriber();
+        return new StatusRequestSubscriber(new StateFormater());
     }
 }

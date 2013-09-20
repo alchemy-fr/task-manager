@@ -11,17 +11,24 @@
 
 namespace Alchemy\TaskManager\Event\TaskManagerSubscriber;
 
+use Alchemy\TaskManager\Event\StateFormater;
 use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\TaskManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Process\ProcessInterface;
 
 /**
  * Writes a lock file to prevent running the task manager multiple times concurrently.
  */
 class StatusRequestSubscriber implements EventSubscriberInterface
 {
+    private $formater;
+
+    public function __construct(StateFormater $formater)
+    {
+        $this->formater = $formater;
+    }
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -35,14 +42,10 @@ class StatusRequestSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $data = array();
-        foreach ($event->getManager()->getProcessManager()->getManagedProcesses() as $name => $process) {
-            $data[$name] = array(
-                'status' => $process->getStatus(),
-                'pid'    => $process->getManagedProcess() instanceof ProcessInterface ? $process->getManagedProcess()->getPid() : null,
-            );
-        }
-
-        $event->setResponse($data);
+        $event->setResponse(
+            $this->formater->toArray(
+                $event->getManager()->getProcessManager()->getManagedProcesses()
+            )
+        );
     }
 }

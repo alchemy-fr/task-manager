@@ -11,6 +11,7 @@
 
 namespace Alchemy\TaskManager;
 
+use Alchemy\TaskManager\Event\StateFormater;
 use Alchemy\TaskManager\Event\TaskManagerEvent;
 use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
@@ -50,7 +51,7 @@ class TaskManager implements LoggerAwareInterface
         $this->logger = $logger;
         $this->listener = $listener;
         $this->manager = new ProcessManager($logger, null, ProcessManager::STRATEGY_IGNORE, ProcessManager::STRATEGY_IGNORE);
-        $this->dispatcher->addSubscriber(new StatusRequestSubscriber());
+        $this->dispatcher->addSubscriber(new StatusRequestSubscriber(new StateFormater()));
     }
 
     public function __destruct()

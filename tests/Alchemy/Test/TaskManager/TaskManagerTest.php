@@ -129,7 +129,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         ');
         $process->run();
         $server->stop();
-        $this->assertEquals('{"request":"STATE","reply":[]}', $process->getOutput());
+        $this->assertRegExp('/\{"request":"STATE","reply":\{"manager":\{"process-id":\d+\},"jobs":\[\]\}\}/', $process->getOutput());
     }
 
     public function testMultipleStartsAndStops()
