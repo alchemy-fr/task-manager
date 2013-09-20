@@ -27,4 +27,9 @@ class TaskManagerEvents
      * This event is triggered when the task manager stops running.
      */
     const MANAGER_REQUEST = 'manager-request';
+
+    /**
+     * This event is triggered when the task manager stops running.
+     */
+    const MANAGER_TICK = 'manager-tick';
 }
