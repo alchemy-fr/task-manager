@@ -2,6 +2,7 @@
 
 namespace Alchemy\TaskManager\Demo;
 
+use Neutron\SignalHandler\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -15,7 +16,13 @@ class RunJobCommand extends Command
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        $task = new Job();
-        $task->run();
+        $job = new Job();
+
+        $handler = SignalHandler::getInstance();
+        $handler->register(array(SIGINT, SIGTERM), function ($signal) use ($job) {
+            $job->stop();
+        });
+
+        $job->run();
     }
 }

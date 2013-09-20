@@ -5,16 +5,15 @@ namespace Alchemy\TaskManager\Demo;
 use Alchemy\TaskManager\TaskManager;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Neutron\SignalHandler\SignalHandler;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TaskManagerCommand extends Command
 {
-    /** @var TaskManager */
-    private $manager;
-
     public function __construct()
     {
         parent::__construct('console:run-task-manager');
@@ -22,28 +21,22 @@ class TaskManagerCommand extends Command
         $this->addOption('host', null, InputOption::VALUE_REQUIRED, 'The host to bind to.', '127.0.0.1')
             ->addOption('port', null, InputOption::VALUE_REQUIRED, 'The port tot bind to.', '6660');
 
-        $logger = new Logger('test');
-        $logger->pushHandler(new StreamHandler('php://stdout'));
-
-        $this->manager = TaskManager::create($logger, new TaskList());
     }
 
     public function execute(InputInterface $input, OutputInterface $output)
     {
         declare(ticks=1);
-        pcntl_signal(SIGINT, array($this, 'signalHandler'));
-        pcntl_signal(SIGTERM, array($this, 'signalHandler'));
 
-        $this->manager->start($input->getOption('host'), $input->getOption('port'));
-    }
+        $logger = new Logger('test');
+        $logger->pushHandler(new StreamHandler('php://stdout'));
 
-    public function signalHandler($signal)
-    {
-        switch ($signal) {
-            case SIGTERM:
-            case SIGINT:
-                $this->manager->stop();
-                break;
-        }
+        $manager = TaskManager::create(new EventDispatcher(), $logger, new TaskList());
+
+        $handler = SignalHandler::getInstance();
+        $handler->register(array(SIGINT, SIGTERM), function ($signal) use ($manager) {
+            $manager->stop();
+        });
+
+        $manager->start($input->getOption('host'), $input->getOption('port'));
     }
 }

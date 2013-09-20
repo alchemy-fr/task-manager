@@ -7,12 +7,6 @@ use Alchemy\TaskManager\JobDataInterface;
 
 class Job extends AbstractJob
 {
-    public function __construct()
-    {
-        parent::__construct();
-        $this->setId('runnable');
-    }
-
     protected function doRun(JobDataInterface $data = null)
     {
         $time = microtime(true);
