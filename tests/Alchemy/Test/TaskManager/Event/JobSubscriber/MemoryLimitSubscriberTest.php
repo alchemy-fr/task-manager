@@ -1,8 +1,8 @@
 <?php
 
-namespace Alchemy\Test\TaskManager\Event\Subscriber;
+namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
-use Alchemy\TaskManager\Event\Subscriber\MemoryLimitSubscriber;
+use Alchemy\TaskManager\Event\JobSubscriber\MemoryLimitSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 
 class MemoryLimitSubscriberTest extends SubscriberTestCase

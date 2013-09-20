@@ -1,8 +1,8 @@
 <?php
 
-namespace Alchemy\Test\TaskManager\Event\Subscriber;
+namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
-use Alchemy\TaskManager\Event\Subscriber\LockFileSubscriber;
+use Alchemy\TaskManager\Event\JobSubscriber\LockFileSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 use Symfony\Component\Finder\Finder;
 

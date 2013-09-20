@@ -5,8 +5,8 @@ namespace Alchemy\Test\TaskManager;
 use Alchemy\TaskManager\AbstractJob;
 use Alchemy\TaskManager\JobDataInterface;
 use Alchemy\Test\TaskManager\PhpProcess;
-use Alchemy\TaskManager\Event\TaskManagerEvents;
-use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
+use Alchemy\TaskManager\Event\JobEvents;
+use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\EventDispatcher\Event;
 
@@ -80,7 +80,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
     {
         $job = new JobTest();
         $counter = 0;
-        $job->addListener(TaskManagerEvents::STOP_REQUEST, function () use (&$counter) { $counter++; });
+        $job->addListener(JobEvents::STOP_REQUEST, function () use (&$counter) { $counter++; });
         $job->stop();
         $this->assertEquals(0, $counter);
         $job->addSubscriber(new DurationLimitSubscriber(0.1));
@@ -119,7 +119,7 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
         use Alchemy\TaskManager\JobDataInterface;
-        use Alchemy\TaskManager\Event\TaskManagerEvents;
+        use Alchemy\TaskManager\Event\JobEvents;
 
         class Job extends Alchemy\TaskManager\AbstractJob
         {
@@ -135,11 +135,11 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         }
 
         $job = new Job();
-        $job->addSubscriber(new Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber(Neutron\SignalHandler\SignalHandler::getInstance()));
-        $job->addListener(TaskManagerEvents::START, function () { echo "start\n"; });
-        $job->addListener(TaskManagerEvents::TICK, function () { echo "tick\n"; });
-        $job->addListener(TaskManagerEvents::STOP, function () { echo "stop\n"; });
-        $job->addListener(TaskManagerEvents::EXCEPTION, function () { echo "exception\n"; });
+        $job->addSubscriber(new Alchemy\TaskManager\Event\JobSubscriber\StopSignalSubscriber(Neutron\SignalHandler\SignalHandler::getInstance()));
+        $job->addListener(JobEvents::START, function () { echo "job-start\n"; });
+        $job->addListener(JobEvents::TICK, function () { echo "job-tick\n"; });
+        $job->addListener(JobEvents::STOP, function () { echo "job-stop\n"; });
+        $job->addListener(JobEvents::EXCEPTION, function () { echo "job-exception\n"; });
         $job->run();
         ';
     }
@@ -168,9 +168,9 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $process->stop();
         $this->assertFalse($process->isRunning());
         $data = array_filter(explode("\n", $process->getOutput()));
-        $this->assertSame(TaskManagerEvents::START, $data[0]);
-        $this->assertSame(TaskManagerEvents::TICK, $data[1]);
-        $this->assertContains(TaskManagerEvents::STOP, $data);
+        $this->assertSame(JobEvents::START, $data[0]);
+        $this->assertSame(JobEvents::TICK, $data[1]);
+        $this->assertContains(JobEvents::STOP, $data);
     }
 
     public function testEventsWithException()
@@ -183,9 +183,9 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         $process->stop();
         $this->assertFalse($process->isRunning());
         $data = array_filter(explode("\n", $process->getOutput()));
-        $this->assertSame(TaskManagerEvents::START, $data[0]);
-        $this->assertSame(TaskManagerEvents::TICK, $data[1]);
-        $this->assertContains(TaskManagerEvents::EXCEPTION, $data);
+        $this->assertSame(JobEvents::START, $data[0]);
+        $this->assertSame(JobEvents::TICK, $data[1]);
+        $this->assertContains(JobEvents::EXCEPTION, $data);
     }
 
     public function testLoggerGettersAndSetters()
@@ -254,20 +254,20 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $job = new JobTest();
         $collector = array();
-        $job->addListener(TaskManagerEvents::START, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::START;
+        $job->addListener(JobEvents::START, function () use (&$collector) {
+            $collector[] = JobEvents::START;
         });
-        $job->addListener(TaskManagerEvents::TICK, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::TICK;
+        $job->addListener(JobEvents::TICK, function () use (&$collector) {
+            $collector[] = JobEvents::TICK;
         });
-        $job->addListener(TaskManagerEvents::STOP, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::STOP;
+        $job->addListener(JobEvents::STOP, function () use (&$collector) {
+            $collector[] = JobEvents::STOP;
         });
 
         $this->assertSame($job, $job->singleRun($data));
-        $this->assertSame(TaskManagerEvents::START, $collector[0]);
-        $this->assertSame(TaskManagerEvents::TICK, $collector[1]);
-        $this->assertContains(TaskManagerEvents::STOP, $collector);
+        $this->assertSame(JobEvents::START, $collector[0]);
+        $this->assertSame(JobEvents::TICK, $collector[1]);
+        $this->assertContains(JobEvents::STOP, $collector);
     }
 
     public function testEventsWithExceptionAreDispatchedOnSingleRun()
@@ -276,17 +276,17 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
 
         $job = new JobFailureTest();
         $collector = array();
-        $job->addListener(TaskManagerEvents::START, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::START;
+        $job->addListener(JobEvents::START, function () use (&$collector) {
+            $collector[] = JobEvents::START;
         });
-        $job->addListener(TaskManagerEvents::TICK, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::TICK;
+        $job->addListener(JobEvents::TICK, function () use (&$collector) {
+            $collector[] = JobEvents::TICK;
         });
-        $job->addListener(TaskManagerEvents::EXCEPTION, function ($event) use (&$collector) {
-            $collector[] = TaskManagerEvents::EXCEPTION;
+        $job->addListener(JobEvents::EXCEPTION, function ($event) use (&$collector) {
+            $collector[] = JobEvents::EXCEPTION;
         });
-        $job->addListener(TaskManagerEvents::STOP, function () use (&$collector) {
-            $collector[] = TaskManagerEvents::STOP;
+        $job->addListener(JobEvents::STOP, function () use (&$collector) {
+            $collector[] = JobEvents::STOP;
         });
 
         try {
@@ -295,9 +295,9 @@ class AbstractJobTest extends \PHPUnit_Framework_TestCase
         } catch (JobFailureException $e) {
 
         }
-        $this->assertSame(TaskManagerEvents::START, $collector[0]);
-        $this->assertSame(TaskManagerEvents::TICK, $collector[1]);
-        $this->assertContains(TaskManagerEvents::EXCEPTION, $collector);
+        $this->assertSame(JobEvents::START, $collector[0]);
+        $this->assertSame(JobEvents::TICK, $collector[1]);
+        $this->assertContains(JobEvents::EXCEPTION, $collector);
     }
 
     public function testDoRunWithoutdataIsOk()

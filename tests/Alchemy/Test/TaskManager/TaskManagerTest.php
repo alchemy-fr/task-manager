@@ -7,6 +7,7 @@ use Alchemy\TaskManager\TaskInterface;
 use Alchemy\TaskManager\TaskListInterface;
 use Alchemy\TaskManager\TaskManager;
 use Alchemy\Test\TaskManager\PhpProcess;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TaskManagerTest extends \PHPUnit_Framework_TestCase
 {
@@ -16,7 +17,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $taskList->expects($this->once())
             ->method('refresh')
             ->will($this->returnValue(array()));
-        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
+        $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
         declare(ticks=1);
         pcntl_alarm(1);
         pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });
@@ -41,11 +42,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\TaskManager\ZMQSocket;
             use Alchemy\Test\TaskManager\PhpProcess;
+            use Symfony\Component\EventDispatcher\EventDispatcher;
 
             $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php file_put_contents(\''.$testfile.'\', \'hello\n\', FILE_APPEND);"), 3)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = TaskManager::create($logger, $taskList);
+            $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);
             $manager->start();
         ';
 
@@ -67,11 +69,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .'
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\TaskManager\ZMQSocket;
+            use Symfony\Component\EventDispatcher\EventDispatcher;
 
             $taskList = new TaskList(array());
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = TaskManager::create($logger, $taskList);
+            $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);
             $manager->start();
         ';
 
@@ -102,11 +105,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .'
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\TaskManager\ZMQSocket;
+            use Symfony\Component\EventDispatcher\EventDispatcher;
 
             $taskList = new TaskList(array());
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = TaskManager::create($logger, $taskList);
+            $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);
             $manager->start();
         ';
 
@@ -136,11 +140,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .$this->getTaskImplementation().$this->getTaskListImplementation()
             .'
             use Alchemy\TaskManager\TaskManager;
+            use Symfony\Component\EventDispatcher\EventDispatcher;
 
             $taskList = new TaskList(array());
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = TaskManager::create($logger, $taskList);
+            $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);
             $manager->start();
         ';
 
@@ -162,7 +167,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $socket->bind();
 
         $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
-        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
+        $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
         $this->setExpectedException('Alchemy\TaskManager\Exception\RuntimeException', 'Unable to bind socket to tcp://127.0.0.1:6660. Is another one already bound ?');
         $manager->start();
     }
@@ -182,11 +187,12 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
             .'
             use Alchemy\TaskManager\TaskManager;
             use Alchemy\Test\TaskManager\PhpProcess;
+            use Symfony\Component\EventDispatcher\EventDispatcher;
 
             $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<3) { usleep(100000);\$n++;} "), 2)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
-            $manager = TaskManager::create($logger, $taskList);
+            $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);
             $manager->start();
         ';
 
@@ -205,7 +211,7 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $taskList->expects($this->exactly(7))
             ->method('refresh')
             ->will($this->returnValue(array()));
-        $manager = TaskManager::create($this->createLoggerMock(), $taskList);
+        $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
         declare(ticks=1);
         pcntl_alarm(1);
         pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });

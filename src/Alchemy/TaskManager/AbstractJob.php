@@ -13,7 +13,7 @@ namespace Alchemy\TaskManager;
 
 use Alchemy\TaskManager\Event\JobEvent;
 use Alchemy\TaskManager\Event\JobExceptionEvent;
-use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\JobEvents;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -124,13 +124,13 @@ abstract class AbstractJob implements JobInterface
     final public function run(JobDataInterface $data = null, $callback = null)
     {
         declare(ticks=1);
-        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this));
         $this->setup();
         while (static::STATUS_STARTED === $this->status) {
             $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
-        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this));
 
         return $this->cleanup();
     }
@@ -151,10 +151,10 @@ abstract class AbstractJob implements JobInterface
     {
         declare(ticks=1);
 
-        $this->dispatcher->dispatch(TaskManagerEvents::START, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this));
         $this->setup();
         $this->doRunOrCleanup($data, $callback);
-        $this->dispatcher->dispatch(TaskManagerEvents::STOP, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this));
         $this->cleanup();
 
         return $this;
@@ -167,7 +167,7 @@ abstract class AbstractJob implements JobInterface
     {
         if ($this->isStarted()) {
             $this->status = static::STATUS_STOPPING;
-            $this->dispatcher->dispatch(TaskManagerEvents::STOP_REQUEST, new JobEvent($this));
+            $this->dispatcher->dispatch(JobEvents::STOP_REQUEST, new JobEvent($this));
         }
 
         return $this;
@@ -181,7 +181,7 @@ abstract class AbstractJob implements JobInterface
         if (!$this->isRunning()) {
             return;
         }
-        $this->dispatcher->dispatch(TaskManagerEvents::TICK, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::TICK, new JobEvent($this));
     }
 
     /**
@@ -278,7 +278,7 @@ abstract class AbstractJob implements JobInterface
         } catch (\Exception $e) {
             $this->cleanup();
             $this->log('error', sprintf('Error while running %s : %s', get_class($this), $e->getMessage()));
-            $this->dispatcher->dispatch(TaskManagerEvents::EXCEPTION, new JobExceptionEvent($this, $e));
+            $this->dispatcher->dispatch(JobEvents::EXCEPTION, new JobExceptionEvent($this, $e));
             throw $e;
         }
 

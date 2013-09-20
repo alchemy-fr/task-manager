@@ -11,10 +11,15 @@
 
 namespace Alchemy\TaskManager;
 
+use Alchemy\TaskManager\Event\TaskManagerEvent;
+use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
+use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusRequestSubscriber;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Symfony\Component\Process\Manager\ProcessManager;
-use Symfony\Component\Process\ProcessInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class TaskManager implements LoggerAwareInterface
 {
@@ -25,7 +30,7 @@ class TaskManager implements LoggerAwareInterface
 
     const RESPONSE_PONG = 'PONG';
     const RESPONSE_OK = 'OK';
-    const RESPONSE_INVALID_MESSAGE = 'INVALID MESSAGE';
+    const RESPONSE_UNHANDLED_MESSAGE = 'UNHANDLED MESSAGE';
 
     /** @var Logger */
     private $logger;
@@ -35,21 +40,51 @@ class TaskManager implements LoggerAwareInterface
     private $manager;
     /** @var ZMQSocket */
     private $listener;
+    /** @var EventDispatcherInterface */
+    private $dispatcher;
 
-    private $lockFile;
-    private $lockDir;
-
-    public function __construct(ZMQSocket $listener, LoggerInterface $logger, TaskListInterface $list)
+    public function __construct(EventDispatcherInterface $dispatcher, ZMQSocket $listener, LoggerInterface $logger, TaskListInterface $list)
     {
+        $this->dispatcher = $dispatcher;
         $this->list = $list;
         $this->logger = $logger;
         $this->listener = $listener;
         $this->manager = new ProcessManager($logger, null, ProcessManager::STRATEGY_IGNORE, ProcessManager::STRATEGY_IGNORE);
+        $this->dispatcher->addSubscriber(new StatusRequestSubscriber());
     }
 
     public function __destruct()
     {
         $this->stop();
+    }
+
+    /**
+     * Adds a listener to the task manager.
+     *
+     * @param string $eventName
+     * @param callable $listener
+     *
+     * @return TaskManager
+     */
+    public function addListener($eventName, $listener)
+    {
+        $this->dispatcher->addListener($eventName, $listener);
+
+        return $this;
+    }
+
+    /**
+     * Adds an event subscriber to the task manager.
+     *
+     * @param EventSubscriberInterface $subscriber
+     *
+     * @return TaskManager
+     */
+    public function addSubscriber(EventSubscriberInterface $subscriber)
+    {
+        $this->dispatcher->addSubscriber($subscriber);
+
+        return $this;
     }
 
     /**
@@ -76,27 +111,14 @@ class TaskManager implements LoggerAwareInterface
         return $this;
     }
 
-    public function getLockDirectory()
+    /**
+     * Returns the underlying process manager.
+     *
+     * @return ProcessManager
+     */
+    public function getProcessManager()
     {
-        if (null === $this->lockDir) {
-            return sys_get_temp_dir();
-        }
-
-        return $this->lockDir;
-    }
-
-    public function setLockDirectory($directory)
-    {
-        if (!is_dir($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be a directory.');
-        }
-        if (!is_writable($directory)) {
-            throw new InvalidArgumentException('%s does not seem to be writeable.');
-        }
-
-        $this->lockDir = rtrim($directory, DIRECTORY_SEPARATOR);
-
-        return $this;
+        return $this->manager;
     }
 
     /**
@@ -109,6 +131,7 @@ class TaskManager implements LoggerAwareInterface
      */
     public function start()
     {
+        $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_START, new TaskManagerEvent($this));
         $this->listener->bind();
 
         $this->manager->setDaemon(true);
@@ -143,9 +166,7 @@ class TaskManager implements LoggerAwareInterface
         if ($this->listener->isBound()) {
             $this->listener->unbind();
         }
-        if (null !== $this->lockFile) {
-            $this->lockFile->unlock();
-        }
+        $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_STOP, new TaskManagerEvent($this));
 
         return $this;
     }
@@ -159,7 +180,7 @@ class TaskManager implements LoggerAwareInterface
      *
      * @return TaskManager
      */
-    public static function create(LoggerInterface $logger, TaskListInterface $list, array $options = array())
+    public static function create(EventDispatcherInterface $dispatcher, LoggerInterface $logger, TaskListInterface $list, array $options = array())
     {
         $options = array_replace(array(
             'listener_protocol'  => 'tcp',
@@ -175,7 +196,7 @@ class TaskManager implements LoggerAwareInterface
             $options['listener_port']
         );
 
-        return new TaskManager($listener, $logger, $list);
+        return new TaskManager($dispatcher, $listener, $logger, $list);
     }
 
     /**
@@ -206,14 +227,10 @@ class TaskManager implements LoggerAwareInterface
      */
     private function poll()
     {
-        while (false !== $message = $this->listener->recv(\ZMQ::MODE_NOBLOCK)) {
-            $this->logger->debug(sprintf('Received message "%s"', $message));
+        while (false !== $message = $this->listener->recv(defined('ZMQ::MODE_DONTWAIT') ? \ZMQ::MODE_DONTWAIT : \ZMQ::MODE_NOBLOCK)) {
             switch ($message) {
                 case static::MESSAGE_PING:
                     $reply = static::RESPONSE_PONG;
-                    break;
-                case static::MESSAGE_STATE:
-                    $reply = $this->getStatusData();
                     break;
                 case static::MESSAGE_STOP:
                     $this->manager->stop();
@@ -224,27 +241,14 @@ class TaskManager implements LoggerAwareInterface
                     $reply = static::RESPONSE_OK;
                     break;
                 default:
-                    $reply = static::RESPONSE_INVALID_MESSAGE;
+                    $reply = static::RESPONSE_UNHANDLED_MESSAGE;
                     break;
             }
-            $this->listener->send(json_encode(array("request" => $message, "reply" => $reply)));
+            $event = new TaskManagerRequestEvent($this, $message, $reply);
+            $this->logger->debug(sprintf('Received message "%s"', $message));
+            $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_REQUEST, $event);
+            $this->listener->send(json_encode(array("request" => $message, "reply" => $event->getResponse())));
             usleep(1000);
         }
-    }
-
-    /**
-     * Returns data about status.
-     */
-    private function getStatusData()
-    {
-        $data = array();
-        foreach ($this->manager->getManagedProcesses() as $name => $process) {
-            $data[$name] = array(
-                'status' => $process->getStatus(),
-                'pid'    => $process->getManagedProcess() instanceof ProcessInterface ? $process->getManagedProcess()->getPid() : null,
-            );
-        }
-
-        return $data;
     }
 }

@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager\Event\Subscriber;
+namespace Alchemy\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobEvent;
-use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\JobEvents;
 use Alchemy\TaskManager\Exception\InvalidArgumentException;
 use Neutron\SignalHandler\SignalHandler;
 use Psr\Log\LoggerInterface;
@@ -46,10 +46,10 @@ class SignalControlledSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            TaskManagerEvents::START     => 'onJobStart',
-            TaskManagerEvents::TICK      => 'onJobTick',
-            TaskManagerEvents::STOP      => 'onJobStop',
-            TaskManagerEvents::EXCEPTION => 'onJobStop',
+            JobEvents::START     => 'onJobStart',
+            JobEvents::TICK      => 'onJobTick',
+            JobEvents::STOP      => 'onJobStop',
+            JobEvents::EXCEPTION => 'onJobStop',
         );
     }
 

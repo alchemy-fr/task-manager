@@ -1,8 +1,8 @@
 <?php
 
-namespace Alchemy\Test\TaskManager\Event\Subscriber;
+namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
-use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\JobEvents;
 
 abstract class SubscriberTestCase extends \PHPUnit_Framework_TestCase
 {
@@ -10,10 +10,10 @@ abstract class SubscriberTestCase extends \PHPUnit_Framework_TestCase
     {
         foreach (array_keys($this->getSubscriber()->getSubscribedEvents()) as $name) {
             $this->assertContains($name, array(
-                TaskManagerEvents::START,
-                TaskManagerEvents::TICK,
-                TaskManagerEvents::STOP,
-                TaskManagerEvents::EXCEPTION,
+                JobEvents::START,
+                JobEvents::TICK,
+                JobEvents::STOP,
+                JobEvents::EXCEPTION,
             ));
         }
     }

@@ -1,8 +1,8 @@
 <?php
 
-namespace Alchemy\Test\TaskManager\Event\Subscriber;
+namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
-use Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber;
+use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 
 class DurationLimitSubscriberTest extends SubscriberTestCase

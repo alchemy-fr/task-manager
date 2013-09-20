@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager\Event\Subscriber;
+namespace Alchemy\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobEvent;
-use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\JobEvents;
 use Alchemy\TaskManager\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -38,7 +38,7 @@ class MemoryLimitSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            TaskManagerEvents::TICK => 'onJobTick',
+            JobEvents::TICK => 'onJobTick',
         );
     }
 

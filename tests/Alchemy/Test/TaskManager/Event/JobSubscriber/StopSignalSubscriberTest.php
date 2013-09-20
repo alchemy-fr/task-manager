@@ -1,8 +1,8 @@
 <?php
 
-namespace Alchemy\Test\TaskManager\Event\Subscriber;
+namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
-use Alchemy\TaskManager\Event\Subscriber\StopSignalSubscriber;
+use Alchemy\TaskManager\Event\JobSubscriber\StopSignalSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 use Neutron\SignalHandler\SignalHandler;
 

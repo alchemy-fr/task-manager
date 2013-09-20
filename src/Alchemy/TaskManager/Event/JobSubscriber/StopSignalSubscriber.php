@@ -9,10 +9,10 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager\Event\Subscriber;
+namespace Alchemy\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobEvent;
-use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\TaskManager\Event\JobEvents;
 use Neutron\SignalHandler\SignalHandler;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -36,9 +36,9 @@ class StopSignalSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            TaskManagerEvents::START     => 'onJobStart',
-            TaskManagerEvents::STOP      => 'onJobStop',
-            TaskManagerEvents::EXCEPTION => 'onJobStop',
+            JobEvents::START     => 'onJobStart',
+            JobEvents::STOP      => 'onJobStop',
+            JobEvents::EXCEPTION => 'onJobStop',
         );
     }
 

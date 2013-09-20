@@ -13,7 +13,7 @@ class JobTest extends FunctionalTestCase
      */
     public function testMaxMemory($max, $megPerSeconds, $expectedDuration)
     {
-        $script = $this->getNonStoppingScript(1, ' $this->data .= str_repeat("x", '.$megPerSeconds.'*1024*1024);', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\MemoryLimitSubscriber('.$max.'*1024*1024));');
+        $script = $this->getNonStoppingScript(1, ' $this->data .= str_repeat("x", '.$megPerSeconds.'*1024*1024);', '$job->addSubscriber(new \Alchemy\TaskManager\Event\JobSubscriber\MemoryLimitSubscriber('.$max.'*1024*1024));');
         $process1 = new PhpProcess($script);
 
         $start = microtime(true);
@@ -39,7 +39,7 @@ class JobTest extends FunctionalTestCase
      */
     public function testMaxDuration($max)
     {
-        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\DurationLimitSubscriber('.$max.'));');
+        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber('.$max.'));');
         $process1 = new PhpProcess($script);
 
         $start = microtime(true);
@@ -60,7 +60,7 @@ class JobTest extends FunctionalTestCase
      */
     public function testPeriodicSignal($periodMilliseconds)
     {
-        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\Subscriber\SignalControlledSubscriber(\Neutron\SignalHandler\SignalHandler::getInstance(), '.($periodMilliseconds / 1000).'));');
+        $script = $this->getNonStoppingScript(0.1, '', '$job->addSubscriber(new \Alchemy\TaskManager\Event\JobSubscriber\SignalControlledSubscriber(\Neutron\SignalHandler\SignalHandler::getInstance(), '.($periodMilliseconds / 1000).'));');
 
         $process1 = new PhpProcess($script);
         $process1->start();

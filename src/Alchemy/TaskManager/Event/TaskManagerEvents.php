@@ -14,27 +14,17 @@ namespace Alchemy\TaskManager\Event;
 class TaskManagerEvents
 {
     /**
-     * This event is triggered when the job starts running.
+     * This event is triggered when the task manager starts running.
      */
-    const START = 'start';
+    const MANAGER_START = 'manager-start';
 
     /**
-     * This event is triggered on PHP tick.
+     * This event is triggered when the task manager stops running.
      */
-    const TICK = 'tick';
+    const MANAGER_STOP = 'manager-stop';
 
     /**
-     * This event is triggered when the the stop method is called and the job is running.
+     * This event is triggered when the task manager stops running.
      */
-    const STOP_REQUEST = 'stop-request';
-
-    /**
-     * This event is triggered when the job stops running.
-     */
-    const STOP = 'stop';
-
-    /**
-     * This event is triggered whenever an exception is triggered during the job run.
-     */
-    const EXCEPTION = 'exception';
+    const MANAGER_REQUEST = 'manager-request';
 }
