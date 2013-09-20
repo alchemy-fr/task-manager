@@ -62,7 +62,7 @@ class TaskManager implements LoggerAwareInterface
     /**
      * Adds a listener to the task manager.
      *
-     * @param string $eventName
+     * @param string   $eventName
      * @param callable $listener
      *
      * @return TaskManager
@@ -125,9 +125,6 @@ class TaskManager implements LoggerAwareInterface
     /**
      * Starts the task manager, opens a listener on the given host and port.
      *
-     * @param string  $host
-     * @param integer $port
-     *
      * @return TaskManager
      */
     public function start()
@@ -176,9 +173,10 @@ class TaskManager implements LoggerAwareInterface
     /**
      * Creates a taskManager.
      *
-     * @param LoggerInterface   $logger
-     * @param TaskListInterface $list
-     * @param array             $options
+     * @param EventDispatcherInterface $dispatcher
+     * @param LoggerInterface          $logger
+     * @param TaskListInterface        $list
+     * @param array                    $options
      *
      * @return TaskManager
      */

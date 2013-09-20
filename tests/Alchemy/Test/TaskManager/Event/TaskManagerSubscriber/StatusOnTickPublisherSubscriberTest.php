@@ -3,10 +3,8 @@
 namespace Alchemy\Test\TaskManager\Event\TaskManagerSubscriber;
 
 use Alchemy\TaskManager\Event\StateFormater;
-use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusRequestSubscriber;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusOnTickPublisherSubscriber;
 use Alchemy\TaskManager\TaskManager;
-use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
 
 class StatusOnTickPublisherSubscriberTest extends SubscriberTestCase
 {

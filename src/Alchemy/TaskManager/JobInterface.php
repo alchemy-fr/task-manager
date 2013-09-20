@@ -59,6 +59,7 @@ interface JobInterface extends LoggerAwareInterface
      * argument.
      *
      * @param JobDataInterface $data
+     * @param callable         $callback
      *
      * @return JobInterface
      *
