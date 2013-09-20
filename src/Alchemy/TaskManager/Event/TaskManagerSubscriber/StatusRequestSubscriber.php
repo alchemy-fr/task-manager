@@ -15,6 +15,7 @@ use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\TaskManager;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\Process\ProcessInterface;
 
 /**
  * Writes a lock file to prevent running the task manager multiple times concurrently.
