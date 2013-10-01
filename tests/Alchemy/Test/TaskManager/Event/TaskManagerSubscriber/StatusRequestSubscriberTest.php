@@ -11,7 +11,7 @@ class StatusRequestSubscriberTest extends SubscriberTestCase
 {
     public function testSetStatusOnRequest()
     {
-        $processManager = $this->getMockBuilder('Symfony\Component\Process\Manager\ProcessManager')
+        $processManager = $this->getMockBuilder('Neutron\ProcessManager\ProcessManager')
                 ->disableOriginalConstructor()
                 ->getMock();
         $processManager->expects($this->once())

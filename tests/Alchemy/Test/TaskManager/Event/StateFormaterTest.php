@@ -19,13 +19,17 @@ class StateFormaterTest extends \PHPUnit_Framework_TestCase
     {
         $pid = getmypid();
 
-        $process1 = $this->getMock('Symfony\Component\Process\ProcessInterface');
+        $process1 = $this->getMockBuilder('Symfony\Component\Process\Process')
+            ->disableOriginalConstructor()
+            ->getMock();
         $process1->expects($this->once())
                 ->method('getPid')
                 ->will($this->returnValue(1234));
-        $process2 = $this->getMock('Symfony\Component\Process\ProcessableInterface');
+        $process2 = $this->getMockBuilder('Symfony\Component\Process\Process')
+            ->disableOriginalConstructor()
+            ->getMock();
 
-        $managed1 = $this->getMockBuilder('Symfony\Component\Process\Manager\ManagedProcess')
+        $managed1 = $this->getMockBuilder('Neutron\ProcessManager\ManagedProcess')
                 ->disableOriginalConstructor()
                 ->getMock();
         $managed1->expects($this->any())
@@ -35,7 +39,7 @@ class StateFormaterTest extends \PHPUnit_Framework_TestCase
                 ->method('getStatus')
                 ->will($this->returnValue('laughing'));
 
-        $managed2 = $this->getMockBuilder('Symfony\Component\Process\Manager\ManagedProcess')
+        $managed2 = $this->getMockBuilder('Neutron\ProcessManager\ManagedProcess')
                 ->disableOriginalConstructor()
                 ->getMock();
         $managed2->expects($this->any())

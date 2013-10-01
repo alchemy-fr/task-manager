@@ -11,13 +11,13 @@
 
 namespace Alchemy\TaskManager\Event;
 
-use Symfony\Component\Process\Manager\ManagedProcess;
-use Symfony\Component\Process\ProcessInterface;
+use Neutron\ProcessManager\ManagedProcess;
+use Symfony\Component\Process\Process;
 
 class StateFormater
 {
     /**
-     * @param ProcessableInterface[] $processes
+     * @param Process[] $processes
      *
      * @return array
      */
@@ -41,7 +41,7 @@ class StateFormater
     {
         return array(
             'status'     => $managed->getStatus(),
-            'process-id' => $managed->getManagedProcess() instanceof ProcessInterface ? $managed->getManagedProcess()->getPid() : null,
+            'process-id' => $managed->getManagedProcess() instanceof Process ? $managed->getManagedProcess()->getPid() : null,
         );
     }
 }

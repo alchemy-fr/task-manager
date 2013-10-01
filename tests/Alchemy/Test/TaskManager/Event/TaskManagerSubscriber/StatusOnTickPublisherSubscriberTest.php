@@ -49,7 +49,7 @@ class StatusOnTickPublisherSubscriberTest extends SubscriberTestCase
                 ->with(array('array', 'of', 'managed-processes'))
                 ->will($this->returnValue($result2));
 
-        $processManager = $this->getMockBuilder('Symfony\Component\Process\Manager\ProcessManager')
+        $processManager = $this->getMockBuilder('Neutron\ProcessManager\ProcessManager')
                 ->disableOriginalConstructor()
                 ->getMock();
         $processManager->expects($this->exactly(2))
@@ -90,7 +90,7 @@ class StatusOnTickPublisherSubscriberTest extends SubscriberTestCase
                 ->with(array('array', 'of', 'managed-processes'))
                 ->will($this->returnValue($result));
 
-        $processManager = $this->getMockBuilder('Symfony\Component\Process\Manager\ProcessManager')
+        $processManager = $this->getMockBuilder('Neutron\ProcessManager\ProcessManager')
                 ->disableOriginalConstructor()
                 ->getMock();
         $processManager->expects($this->exactly(5))

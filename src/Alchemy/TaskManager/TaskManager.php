@@ -16,9 +16,9 @@ use Alchemy\TaskManager\Event\TaskManagerEvent;
 use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusRequestSubscriber;
+use Neutron\ProcessManager\ProcessManager;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareInterface;
-use Symfony\Component\Process\Manager\ProcessManager;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -228,6 +228,7 @@ class TaskManager implements LoggerAwareInterface
     private function poll()
     {
         while (false !== $message = $this->listener->recv(defined('ZMQ::MODE_DONTWAIT') ? \ZMQ::MODE_DONTWAIT : \ZMQ::MODE_NOBLOCK)) {
+            $eventName = TaskManagerEvents::MANAGER_REQUEST;
             switch ($message) {
                 case static::MESSAGE_PING:
                     $reply = static::RESPONSE_PONG;
@@ -235,6 +236,7 @@ class TaskManager implements LoggerAwareInterface
                 case static::MESSAGE_STOP:
                     $this->manager->stop();
                     $reply = static::RESPONSE_OK;
+                    $eventName = TaskManagerEvents::STOP_REQUEST;
                     break;
                 case static::MESSAGE_PROCESS_UPDATE:
                     $this->updateProcesses();
@@ -246,7 +248,7 @@ class TaskManager implements LoggerAwareInterface
             }
             $event = new TaskManagerRequestEvent($this, $message, $reply);
             $this->logger->debug(sprintf('Received message "%s"', $message));
-            $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_REQUEST, $event);
+            $this->dispatcher->dispatch($eventName, $event);
             $this->listener->send(json_encode(array("request" => $message, "reply" => $event->getResponse())));
             usleep(1000);
         }

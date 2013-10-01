@@ -24,6 +24,11 @@ class TaskManagerEvents
     const MANAGER_STOP = 'manager-stop';
 
     /**
+     * This event is triggered when the task manager receives a stops request.
+     */
+    const STOP_REQUEST = 'stop-request';
+
+    /**
      * This event is triggered when the task manager stops running.
      */
     const MANAGER_REQUEST = 'manager-request';

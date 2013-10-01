@@ -11,7 +11,7 @@
 
 namespace Alchemy\TaskManager;
 
-use Symfony\Component\Process\ProcessableInterface;
+use Symfony\Component\Process\Process;
 
 interface TaskInterface
 {
@@ -32,7 +32,7 @@ interface TaskInterface
     /**
      * Creates a processable object for the TaskManager.
      *
-     * @return ProcessableInterface
+     * @return Process
      */
     public function createProcess();
 }

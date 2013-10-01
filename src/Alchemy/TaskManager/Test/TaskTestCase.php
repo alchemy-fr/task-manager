@@ -9,7 +9,7 @@ abstract class TaskTestCase extends \PHPUnit_Framework_TestCase
     public function testThatCreateProcessReturnsAProcessableInterface()
     {
         $task = $this->getTask();
-        $this->assertInstanceOf('Symfony\Component\Process\ProcessableInterface', $task->createProcess());
+        $this->assertInstanceOf('Symfony\Component\Process\Process', $task->createProcess());
     }
 
     public function testThatTheNameIsString()
