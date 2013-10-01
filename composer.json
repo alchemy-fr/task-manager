@@ -20,19 +20,19 @@
         "php"                      : ">=5.3.3",
         "neutron/signal-handler"   : "~1.0",
         "symfony/event-dispatcher" : "~2.0",
-        "symfony/symfony"          : "dev-process-manager as 2.4.x-dev",
+        "symfony/process"          : "2.4.x-dev@dev",
         "ext-zmq"                  : "*"
     },
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/romainneutron/symfony"
+            "url": "https://github.com/romainneutron/ProcessManager"
         }
     ],
     "require-dev": {
         "monolog/monolog"          : "~1.0",
         "phpunit/phpunit"          : "~3.7",
-        "symfony/console"          : "dev-process-manager as 2.4.x-dev",
+        "symfony/console"          : "~2.3",
         "symfony/finder"           : "~2.1"
     },
     "autoload": {
