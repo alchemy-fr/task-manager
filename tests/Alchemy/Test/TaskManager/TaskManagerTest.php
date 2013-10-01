@@ -7,6 +7,7 @@ use Alchemy\TaskManager\TaskInterface;
 use Alchemy\TaskManager\TaskListInterface;
 use Alchemy\TaskManager\TaskManager;
 use Alchemy\Test\TaskManager\PhpProcess;
+use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class TaskManagerTest extends \PHPUnit_Framework_TestCase
@@ -203,6 +204,27 @@ class TaskManagerTest extends \PHPUnit_Framework_TestCase
         $data = file_get_contents($testfile);
         unlink($testfile);
         $this->assertContains("hello\nhello\nhello\nhello\n", $data);
+    }
+
+    public function testThatCallingStopTriggersAStopRequestEvent()
+    {
+        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList->expects($this->any())
+            ->method('refresh')
+            ->will($this->returnValue(array()));
+        $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
+        $boolean = false;
+        $manager->addListener(TaskManagerEvents::STOP_REQUEST, function () use (&$boolean) {
+            $boolean = true;
+        });
+        declare(ticks=1);
+        pcntl_alarm(1);
+        $phpunit = $this;
+        pcntl_signal(SIGALRM, function () use ($manager, &$boolean, $phpunit) {
+            $phpunit->assertFalse($boolean);
+            $manager->stop();
+            $phpunit->assertTrue($boolean);
+        });
     }
 
     public function testThatRefreshIsCalledAsManyTimestheUpdateIsRequested()
