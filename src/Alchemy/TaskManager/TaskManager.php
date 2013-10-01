@@ -247,7 +247,7 @@ class TaskManager implements LoggerAwareInterface
                     break;
             }
             $event = new TaskManagerRequestEvent($this, $message, $reply);
-            $this->logger->debug(sprintf('Received message "%s"', $message));
+            $this->logger->info(sprintf('Received message "%s"', $message));
             $this->dispatcher->dispatch($eventName, $event);
             $this->listener->send(json_encode(array("request" => $message, "reply" => $event->getResponse())));
             usleep(1000);
