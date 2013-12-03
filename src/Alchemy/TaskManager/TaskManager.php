@@ -231,22 +231,22 @@ class TaskManager implements LoggerAwareInterface
             $eventName = TaskManagerEvents::MANAGER_REQUEST;
             switch ($message) {
                 case static::MESSAGE_PING:
-                    $reply = static::RESPONSE_PONG;
+                    $response = static::RESPONSE_PONG;
                     break;
                 case static::MESSAGE_STOP:
                     $this->manager->stop();
-                    $reply = static::RESPONSE_OK;
+                    $response = static::RESPONSE_OK;
                     $eventName = TaskManagerEvents::STOP_REQUEST;
                     break;
                 case static::MESSAGE_PROCESS_UPDATE:
                     $this->updateProcesses();
-                    $reply = static::RESPONSE_OK;
+                    $response = static::RESPONSE_OK;
                     break;
                 default:
-                    $reply = static::RESPONSE_UNHANDLED_MESSAGE;
+                    $response = static::RESPONSE_UNHANDLED_MESSAGE;
                     break;
             }
-            $event = new TaskManagerRequestEvent($this, $message, $reply);
+            $event = new TaskManagerRequestEvent($this, $message, $response);
             $this->logger->info(sprintf('Received message "%s"', $message));
             $this->dispatcher->dispatch($eventName, $event);
             $this->listener->send(json_encode(array("request" => $message, "reply" => $event->getResponse())));
