@@ -21,7 +21,7 @@
         "neutron/process-manager"  : "~1.0",
         "neutron/signal-handler"   : "~1.0",
         "symfony/event-dispatcher" : "~2.0",
-        "symfony/process"          : "2.4.x-dev@dev",
+        "symfony/process"          : "~2.4",
         "ext-zmq"                  : "*"
     },
     "repositories": [
