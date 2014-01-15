@@ -155,7 +155,7 @@ class TaskManager implements LoggerAwareInterface
     }
 
     /**
-     * Stopes the task manager.
+     * Stops the task manager.
      *
      * @param integer $timeout A timeout
      * @param integer $signal  A signal to send at the end of the timeout.
