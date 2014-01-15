@@ -6,7 +6,6 @@ use Alchemy\TaskManager\Event\StateFormater;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusRequestSubscriber;
 use Alchemy\TaskManager\TaskManager;
 use Alchemy\TaskManager\Event\TaskManagerRequestEvent;
-use Alchemy\Test\TaskManager\TestCase;
 
 class StatusRequestSubscriberTest extends SubscriberTestCase
 {

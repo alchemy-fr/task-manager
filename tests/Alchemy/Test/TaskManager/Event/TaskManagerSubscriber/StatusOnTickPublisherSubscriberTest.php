@@ -5,7 +5,6 @@ namespace Alchemy\Test\TaskManager\Event\TaskManagerSubscriber;
 use Alchemy\TaskManager\Event\StateFormater;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\StatusOnTickPublisherSubscriber;
 use Alchemy\TaskManager\TaskManager;
-use Alchemy\Test\TaskManager\TestCase;
 
 class StatusOnTickPublisherSubscriberTest extends SubscriberTestCase
 {

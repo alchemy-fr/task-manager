@@ -189,7 +189,7 @@ class TaskManagerTest extends TestCase
             use Alchemy\Test\TaskManager\PhpProcess;
             use Symfony\Component\EventDispatcher\EventDispatcher;
 
-            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while(\$n<3) { usleep(100000);\$n++;} "), 2)));
+            $taskList = new TaskList(array(new Task("task 1", new PhpProcess("<?php declare(ticks=1);pcntl_signal(SIGCONT, function () {file_put_contents(\"'.$testfile.'\", \"hello\n\", FILE_APPEND);}); \$n=0; while (\$n<3) { usleep(100000);\$n++;} "), 2)));
             $logger = new \Monolog\Logger("test");
             $logger->pushHandler(new \Monolog\Handler\StreamHandler("php://stdout"));
             $manager = TaskManager::create(new EventDispatcher(), $logger, $taskList);

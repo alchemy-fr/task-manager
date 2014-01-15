@@ -4,7 +4,6 @@ namespace Alchemy\Test\TaskManager;
 
 use Alchemy\TaskManager\AbstractJob;
 use Alchemy\TaskManager\JobDataInterface;
-use Alchemy\Test\TaskManager\PhpProcess;
 use Alchemy\TaskManager\Event\JobEvents;
 use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;

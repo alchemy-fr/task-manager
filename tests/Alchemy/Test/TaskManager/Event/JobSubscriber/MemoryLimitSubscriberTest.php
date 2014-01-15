@@ -4,7 +4,6 @@ namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobSubscriber\MemoryLimitSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
-use Alchemy\Test\TaskManager\TestCase;
 
 class MemoryLimitSubscriberTest extends SubscriberTestCase
 {

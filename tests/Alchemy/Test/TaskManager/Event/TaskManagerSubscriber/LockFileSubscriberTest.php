@@ -5,9 +5,8 @@ namespace Alchemy\Test\TaskManager\Event\TaskManagerSubscriber;
 use Alchemy\TaskManager\Event\TaskManagerSubscriber\LockFileSubscriber;
 use Alchemy\TaskManager\Event\TaskManagerEvent;
 use Symfony\Component\Finder\Finder;
-use Alchemy\Test\TaskManager\TestCase;
 
-class TaskManagerSubscriberTest extends SubscriberTestCase
+class LockFileSubscriberTest extends SubscriberTestCase
 {
     /**
      * @dataProvider provideInvalidParams

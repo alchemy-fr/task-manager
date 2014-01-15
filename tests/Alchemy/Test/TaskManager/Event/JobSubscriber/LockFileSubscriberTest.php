@@ -5,7 +5,6 @@ namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 use Alchemy\TaskManager\Event\JobSubscriber\LockFileSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 use Symfony\Component\Finder\Finder;
-use Alchemy\Test\TaskManager\TestCase;
 
 class LockFileSubscriberTest extends SubscriberTestCase
 {
