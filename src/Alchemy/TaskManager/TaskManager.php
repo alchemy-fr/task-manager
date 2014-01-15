@@ -33,6 +33,9 @@ class TaskManager implements LoggerAwareInterface
     const RESPONSE_OK = 'OK';
     const RESPONSE_UNHANDLED_MESSAGE = 'UNHANDLED MESSAGE';
 
+    const DEFAULT_POLLING_PERIOD = 1000;
+    const DEFAULT_TICK_PERIOD = 0.5;
+
     /** @var Logger */
     private $logger;
     /** @var TaskListInterface */
@@ -43,8 +46,10 @@ class TaskManager implements LoggerAwareInterface
     private $listener;
     /** @var EventDispatcherInterface */
     private $dispatcher;
+    /** @var array */
+    private $options;
 
-    public function __construct(EventDispatcherInterface $dispatcher, ZMQSocket $listener, LoggerInterface $logger, TaskListInterface $list)
+    public function __construct(EventDispatcherInterface $dispatcher, ZMQSocket $listener, LoggerInterface $logger, TaskListInterface $list, array $options = array())
     {
         $this->dispatcher = $dispatcher;
         $this->list = $list;
@@ -52,6 +57,11 @@ class TaskManager implements LoggerAwareInterface
         $this->listener = $listener;
         $this->manager = new ProcessManager($logger, null, ProcessManager::STRATEGY_IGNORE, ProcessManager::STRATEGY_IGNORE);
         $this->dispatcher->addSubscriber(new StatusRequestSubscriber(new StateFormater()));
+
+        $this->options = array_replace(array(
+            'polling_period'     => self::DEFAULT_POLLING_PERIOD,
+            'tick_period'        => self::DEFAULT_TICK_PERIOD,
+        ), $options);
     }
 
     public function __destruct()
@@ -152,7 +162,7 @@ class TaskManager implements LoggerAwareInterface
             $this->poll();
             $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_TICK, new TaskManagerEvent($this));
             // sleep at list 10ms, at max 100ms
-            usleep(max(0.1 - (microtime(true) - $start), 0.01) * 1E6);
+            usleep(max($this->options['tick_period'] - (microtime(true) - $start), 0.01) * 1E6);
         }
 
         return $this;
@@ -196,6 +206,8 @@ class TaskManager implements LoggerAwareInterface
             'listener_protocol'  => 'tcp',
             'listener_host'      => '127.0.0.1',
             'listener_port'      => 6660,
+            'polling_period'     => self::DEFAULT_POLLING_PERIOD,
+            'tick_period'        => self::DEFAULT_TICK_PERIOD,
         ), $options);
 
         $context = new \ZMQContext();
@@ -206,7 +218,10 @@ class TaskManager implements LoggerAwareInterface
             $options['listener_port']
         );
 
-        return new TaskManager($dispatcher, $listener, $logger, $list);
+        return new TaskManager($dispatcher, $listener, $logger, $list, array(
+            'polling_period'     => $options['polling_period'],
+            'tick_period'        => $options['tick_period'],
+        ));
     }
 
     /**
@@ -260,7 +275,7 @@ class TaskManager implements LoggerAwareInterface
             $this->logger->info(sprintf('Received message "%s"', $message));
             $this->dispatcher->dispatch($eventName, $event);
             $this->listener->send(json_encode(array("request" => $message, "reply" => $event->getResponse())));
-            usleep(1000);
+            usleep($this->options['polling_period']);
         }
     }
 }
