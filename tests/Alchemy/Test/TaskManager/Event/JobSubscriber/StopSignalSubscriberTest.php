@@ -5,6 +5,7 @@ namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 use Alchemy\TaskManager\Event\JobSubscriber\StopSignalSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
 use Neutron\SignalHandler\SignalHandler;
+use Alchemy\Test\TaskManager\TestCase;
 
 class StopSignalSubscriberTest extends SubscriberTestCase
 {

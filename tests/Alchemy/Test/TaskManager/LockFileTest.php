@@ -4,7 +4,7 @@ namespace Alchemy\Test\TaskManager;
 
 use Alchemy\TaskManager\LockFile;
 
-class LockFileTest extends \PHPUnit_Framework_TestCase
+class LockFileTest extends TestCase
 {
     private $lockfile;
     private $lockfile2;

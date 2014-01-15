@@ -3,8 +3,9 @@
 namespace Alchemy\Test\TaskManager\Event;
 
 use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\Test\TaskManager\TestCase;
 
-class JobEventTest extends \PHPUnit_Framework_TestCase
+class JobEventTest extends TestCase
 {
     public function testJob()
     {

@@ -4,7 +4,7 @@ namespace Alchemy\Test\TaskManager;
 
 use Alchemy\TaskManager\ZMQSocket;
 
-class ZMQSocketTest extends \PHPUnit_Framework_TestCase
+class ZMQSocketTest extends TestCase
 {
     public function testBindUnbindMultipleTimes()
     {

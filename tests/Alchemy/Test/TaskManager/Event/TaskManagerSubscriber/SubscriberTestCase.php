@@ -3,8 +3,9 @@
 namespace Alchemy\Test\TaskManager\Event\TaskManagerSubscriber;
 
 use Alchemy\TaskManager\Event\TaskManagerEvents;
+use Alchemy\Test\TaskManager\TestCase;
 
-abstract class SubscriberTestCase extends \PHPUnit_Framework_TestCase
+abstract class SubscriberTestCase extends TestCase
 {
     public function testThatEventsAreRecognized()
     {

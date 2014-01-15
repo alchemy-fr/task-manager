@@ -4,6 +4,7 @@ namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\Test\TaskManager\TestCase;
 
 class DurationLimitSubscriberTest extends SubscriberTestCase
 {

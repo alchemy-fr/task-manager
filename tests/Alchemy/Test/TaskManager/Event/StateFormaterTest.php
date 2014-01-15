@@ -3,8 +3,9 @@
 namespace Alchemy\Test\TaskManager\Event;
 
 use Alchemy\TaskManager\Event\StateFormater;
+use Alchemy\Test\TaskManager\TestCase;
 
-class StateFormaterTest extends \PHPUnit_Framework_TestCase
+class StateFormaterTest extends TestCase
 {
     /**
      * @dataProvider provideProcessesAndStates

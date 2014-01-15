@@ -10,7 +10,7 @@ use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\EventDispatcher\Event;
 
-class AbstractJobTest extends \PHPUnit_Framework_TestCase
+class AbstractJobTest extends TestCase
 {
     private $lockDir;
 

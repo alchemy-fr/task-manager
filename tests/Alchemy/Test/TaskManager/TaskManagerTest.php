@@ -6,11 +6,10 @@ use Alchemy\TaskManager\ZMQSocket;
 use Alchemy\TaskManager\TaskInterface;
 use Alchemy\TaskManager\TaskListInterface;
 use Alchemy\TaskManager\TaskManager;
-use Alchemy\Test\TaskManager\PhpProcess;
 use Alchemy\TaskManager\Event\TaskManagerEvents;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
-class TaskManagerTest extends \PHPUnit_Framework_TestCase
+class TaskManagerTest extends TestCase
 {
     public function testThatItRunsWithoutAnyProcesses()
     {
