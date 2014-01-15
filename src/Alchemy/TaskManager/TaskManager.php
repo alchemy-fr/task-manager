@@ -60,6 +60,10 @@ class TaskManager implements LoggerAwareInterface
             $this->stop();
         }
 
+        if ($this->manager->getStatus() === ProcessManager::STATUS_READY) {
+            return;
+        }
+
         while (!$this->manager->isTerminated()) {
             usleep(1000);
         }
