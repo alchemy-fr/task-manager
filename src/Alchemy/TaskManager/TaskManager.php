@@ -56,7 +56,13 @@ class TaskManager implements LoggerAwareInterface
 
     public function __destruct()
     {
-        $this->stop();
+        if ($this->manager->isRunning()) {
+            $this->stop();
+        }
+
+        while (!$this->manager->isTerminated()) {
+            usleep(1000);
+        }
     }
 
     /**
