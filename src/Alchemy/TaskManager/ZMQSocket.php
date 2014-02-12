@@ -74,6 +74,6 @@ class ZMQSocket
 
     public static function create(\ZMQContext $context, $type, $protocol, $host, $port)
     {
-        return new static($context->getSocket($type), $protocol, $host, $port);
+        return new static($context, $type, $protocol, $host, $port);
     }
 }
