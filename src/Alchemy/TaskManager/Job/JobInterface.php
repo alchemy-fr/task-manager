@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager;
+namespace Alchemy\TaskManager\Job;
 
 use Psr\Log\LoggerAwareInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -49,7 +49,7 @@ interface JobInterface extends LoggerAwareInterface
      *
      * @api
      */
-    public function stop();
+    public function stop(JobDataInterface $data = null);
 
     /**
      * Runs the job.

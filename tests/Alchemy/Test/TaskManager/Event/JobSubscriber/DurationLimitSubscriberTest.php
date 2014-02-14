@@ -24,17 +24,17 @@ class DurationLimitSubscriberTest extends SubscriberTestCase
 
     public function testDoesNothingIfNotStarted()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new DurationLimitSubscriber(0.1);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testWithLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
@@ -42,45 +42,45 @@ class DurationLimitSubscriberTest extends SubscriberTestCase
         $logger->expects($this->once())->method('info')->with('Max duration reached (0.1 s.), stopping.');
 
         $subscriber = new DurationLimitSubscriber(0.1, $logger);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWithoutLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new DurationLimitSubscriber(0.1);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickDoesNothingIfJobIsNotStarted()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
         $subscriber = new DurationLimitSubscriber(0.1);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWhenMemoryIsQuiteOk()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
         $subscriber = new DurationLimitSubscriber(0.1);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(50000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     protected function getSubscriber()

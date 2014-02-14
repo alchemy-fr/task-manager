@@ -30,13 +30,13 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
-        use Alchemy\TaskManager\JobDataInterface;
+        use Alchemy\TaskManager\Job\JobDataInterface;
 
         declare(ticks=1);
 
-        class Job extends Alchemy\TaskManager\AbstractJob
+        class Job extends Alchemy\TaskManager\Job\AbstractJob
         {
-            protected function doRun(JobDataInterface $data = null)
+            protected function doRun(JobDataInterface $data)
             {
                 '.$extra.'
                 usleep('.($time*10).'*100000);
@@ -54,20 +54,20 @@ class FunctionalTestCase extends \PHPUnit_Framework_TestCase
         return '<?php
         require "'.__DIR__.'/../../../../vendor/autoload.php";
 
-        use Alchemy\TaskManager\JobDataInterface;
+        use Alchemy\TaskManager\Job\JobDataInterface;
 
         declare(ticks=1);
 
-        class Job extends Alchemy\TaskManager\AbstractJob
+        class Job extends Alchemy\TaskManager\Job\AbstractJob
         {
-            protected function doRun(JobDataInterface $data = null)
+            protected function doRun(JobDataInterface $data)
             {
                 $n = 0;
                 while ($n < 60 && $this->getStatus() === static::STATUS_STARTED) {
                     usleep(10000);
                     $n++;
                 }
-                $this->stop();
+                $this->stop($data);
             }
         }
 

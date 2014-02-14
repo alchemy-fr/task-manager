@@ -50,7 +50,7 @@ class StopSignalSubscriber implements EventSubscriberInterface
                 if (null !== $logger) {
                     $logger->info(sprintf('Caught stop signal `%d`, stopping', $signal));
                 }
-                $event->getJob()->stop();
+                $event->getJob()->stop($event->getData());
             }
         };
 

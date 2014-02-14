@@ -25,17 +25,17 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
 
     public function testDoesNothingIfNotStarted()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testWithLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
@@ -43,70 +43,70 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $logger->expects($this->once())->method('info')->with('No signal received since start-time (max period is 0.15 s.), stopping.');
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15, $logger);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(150000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWithoutLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(150000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickMultiple()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
         $subscriber->signalHandler(SIGCONT);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickDoesNothingIfJobIsNotStarted()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(150000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWhenMemoryIsQuiteOk()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15);
-        $subscriber->onJobStart(new JobEvent($job));
+        $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));
         usleep(100000);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     protected function getSubscriber()

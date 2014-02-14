@@ -1,11 +1,13 @@
 <?php
 
-namespace Alchemy\Test\TaskManager;
+namespace Alchemy\Test\TaskManager\Job;
 
-use Alchemy\TaskManager\AbstractJob;
-use Alchemy\TaskManager\JobDataInterface;
+use Alchemy\TaskManager\Job\AbstractJob;
+use Alchemy\TaskManager\Job\JobDataInterface;
 use Alchemy\TaskManager\Event\JobEvents;
 use Alchemy\TaskManager\Event\JobSubscriber\DurationLimitSubscriber;
+use Alchemy\Test\TaskManager\PhpProcess;
+use Alchemy\Test\TaskManager\TestCase;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\EventDispatcher\Event;
 
@@ -33,13 +35,13 @@ class AbstractJobTest extends TestCase
     private function getPauseScript()
     {
         return '<?php
-        require "'.__DIR__.'/../../../../vendor/autoload.php";
+        require "'.__DIR__.'/../../../../../vendor/autoload.php";
 
-        use Alchemy\TaskManager\JobDataInterface;
+        use Alchemy\TaskManager\Job\JobDataInterface;
 
-        class Job extends Alchemy\TaskManager\AbstractJob
+        class Job extends Alchemy\TaskManager\Job\AbstractJob
         {
-            protected function doRun(JobDataInterface $data = null)
+            protected function doRun(JobDataInterface $data)
             {
             }
 
@@ -90,13 +92,13 @@ class AbstractJobTest extends TestCase
     private function getPauseAndLoopScript()
     {
         return '<?php
-        require "'.__DIR__.'/../../../../vendor/autoload.php";
+        require "'.__DIR__.'/../../../../../vendor/autoload.php";
 
-        use Alchemy\TaskManager\JobDataInterface;
+        use Alchemy\TaskManager\Job\JobDataInterface;
 
-        class Job extends Alchemy\TaskManager\AbstractJob
+        class Job extends Alchemy\TaskManager\Job\AbstractJob
         {
-            protected function doRun(JobDataInterface $data = null)
+            protected function doRun(JobDataInterface $data)
             {
                 echo "loop\n";
             }
@@ -115,14 +117,14 @@ class AbstractJobTest extends TestCase
     private function getEventsScript($throwException)
     {
         return '<?php
-        require "'.__DIR__.'/../../../../vendor/autoload.php";
+        require "'.__DIR__.'/../../../../../vendor/autoload.php";
 
-        use Alchemy\TaskManager\JobDataInterface;
+        use Alchemy\TaskManager\Job\JobDataInterface;
         use Alchemy\TaskManager\Event\JobEvents;
 
-        class Job extends Alchemy\TaskManager\AbstractJob
+        class Job extends Alchemy\TaskManager\Job\AbstractJob
         {
-            protected function doRun(JobDataInterface $data = null)
+            protected function doRun(JobDataInterface $data)
             {
                 '.($throwException ? 'throw new \Exception("failure");' : '').'
             }
@@ -199,7 +201,7 @@ class AbstractJobTest extends TestCase
 
     public function testDataIsPassedToDoRun()
     {
-        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+        $data = $this->createDataMock();
 
         $job = new JobTest();
         $job->addSubscriber(new DurationLimitSubscriber(0.2));
@@ -210,7 +212,7 @@ class AbstractJobTest extends TestCase
 
     public function testSingleRunRunsAndStop()
     {
-        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+        $data = $this->createDataMock();
 
         $job = new JobTest();
         $start = microtime(true);
@@ -249,7 +251,7 @@ class AbstractJobTest extends TestCase
 
     public function testEventsAreDispatchedOnSingleRun()
     {
-        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+        $data = $this->createDataMock();
 
         $job = new JobTest();
         $collector = array();
@@ -271,7 +273,7 @@ class AbstractJobTest extends TestCase
 
     public function testEventsWithExceptionAreDispatchedOnSingleRun()
     {
-        $data = $this->getMock('Alchemy\TaskManager\JobDataInterface');
+        $data = $this->createDataMock();
 
         $job = new JobFailureTest();
         $collector = array();
@@ -316,7 +318,7 @@ class AbstractJobTest extends TestCase
 
         }
         $job = new JobFailureTest();
-        $this->setExpectedException('Alchemy\Test\TaskManager\JobFailureException', 'Total failure.');
+        $this->setExpectedException('Alchemy\Test\TaskManager\Job\JobFailureException', 'Total failure.');
         $job->run();
     }
 }
@@ -330,7 +332,7 @@ class JobTest extends AbstractJob
         return $this->data;
     }
 
-    protected function doRun(JobDataInterface $data = null)
+    protected function doRun(JobDataInterface $data)
     {
         $this->data = $data;
     }
@@ -338,7 +340,7 @@ class JobTest extends AbstractJob
 
 class JobTestWithCustomEvent extends AbstractJob
 {
-    protected function doRun(JobDataInterface $data = null)
+    protected function doRun(JobDataInterface $data)
     {
         $this->dispatcher->dispatch('coucou', new Event());
     }
@@ -346,7 +348,7 @@ class JobTestWithCustomEvent extends AbstractJob
 
 class JobFailureTest extends AbstractJob
 {
-    protected function doRun(JobDataInterface $data = null)
+    protected function doRun(JobDataInterface $data)
     {
         throw new JobFailureException('Total failure.');
     }

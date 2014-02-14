@@ -9,8 +9,15 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager;
+namespace Alchemy\TaskManager\Job;
 
-interface JobDataInterface
+class NullJobData implements JobDataInterface
 {
+    /**
+     * {@inheritdoc}
+     */
+    public function __toString()
+    {
+        return '';
+    }
 }
