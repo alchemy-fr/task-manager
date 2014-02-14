@@ -9,8 +9,10 @@ class JobEventTest extends TestCase
 {
     public function testJob()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
-        $event = new JobEvent($job);
+        $job = $this->createJobMock();
+        $data = $this->createDataMock();
+        $event = new JobEvent($job, $data);
         $this->assertSame($job, $event->getJob());
+        $this->assertSame($data, $event->getData());
     }
 }

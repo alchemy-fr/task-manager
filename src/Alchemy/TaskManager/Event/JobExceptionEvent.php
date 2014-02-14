@@ -11,15 +11,16 @@
 
 namespace Alchemy\TaskManager\Event;
 
-use Alchemy\TaskManager\JobInterface;
+use Alchemy\TaskManager\Job\JobDataInterface;
+use Alchemy\TaskManager\Job\JobInterface;
 
 class JobExceptionEvent extends JobEvent
 {
     private $exception;
 
-    public function __construct(JobInterface $job, \Exception $e)
+    public function __construct(JobInterface $job, \Exception $e, JobDataInterface $data)
     {
-        parent::__construct($job);
+        parent::__construct($job, $data);
         $this->exception = $e;
     }
 

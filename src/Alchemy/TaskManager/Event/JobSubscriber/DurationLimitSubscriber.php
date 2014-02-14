@@ -66,7 +66,7 @@ class DurationLimitSubscriber implements EventSubscriberInterface
             if (null !== $this->logger) {
                 $this->logger->info(sprintf('Max duration reached (%s s.), stopping.', $this->limit));
             }
-            $event->getJob()->stop();
+            $event->getJob()->stop($event->getData());
         }
     }
 }

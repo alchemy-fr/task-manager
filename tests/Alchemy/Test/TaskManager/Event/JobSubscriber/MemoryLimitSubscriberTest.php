@@ -24,7 +24,7 @@ class MemoryLimitSubscriberTest extends SubscriberTestCase
 
     public function testOnJobTickWithLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
@@ -32,37 +32,37 @@ class MemoryLimitSubscriberTest extends SubscriberTestCase
         $logger->expects($this->once())->method('info')->with('Max memory reached (1 o.), stopping.');
 
         $subscriber = new MemoryLimitSubscriber(1, $logger);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWithoutLogger()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new MemoryLimitSubscriber(1);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickDoesNothingIfJobIsNotStarted()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(false));
 
         $subscriber = new MemoryLimitSubscriber(1);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     public function testOnJobTickWhenMemoryIsQuiteOk()
     {
-        $job = $this->getMock('Alchemy\TaskManager\JobInterface');
+        $job = $this->createJobMock();
         $job->expects($this->never())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $subscriber = new MemoryLimitSubscriber(memory_get_usage() + 1<<20);
-        $subscriber->onJobTick(new JobEvent($job));
+        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
     }
 
     protected function getSubscriber()

@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Alchemy\TaskManager;
+namespace Alchemy\TaskManager\Job;
 
 use Alchemy\TaskManager\Event\JobEvent;
 use Alchemy\TaskManager\Event\JobExceptionEvent;
@@ -124,13 +124,14 @@ abstract class AbstractJob implements JobInterface
     final public function run(JobDataInterface $data = null, $callback = null)
     {
         declare(ticks=1);
-        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this));
-        $this->setup();
+        $data = $data ?: new NullJobData();
+        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
+        $this->setup($data);
         while (static::STATUS_STARTED === $this->status) {
             $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
-        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this, $data));
 
         return $this->cleanup();
     }
@@ -150,11 +151,11 @@ abstract class AbstractJob implements JobInterface
     final public function singleRun(JobDataInterface $data = null, $callback = null)
     {
         declare(ticks=1);
-
-        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this));
-        $this->setup();
+        $data = $data ?: new NullJobData();
+        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
+        $this->setup($data);
         $this->doRunOrCleanup($data, $callback);
-        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this, $data));
         $this->cleanup();
 
         return $this;
@@ -163,11 +164,11 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function stop()
+    public function stop(JobDataInterface $data = null)
     {
         if ($this->isStarted()) {
             $this->status = static::STATUS_STOPPING;
-            $this->dispatcher->dispatch(JobEvents::STOP_REQUEST, new JobEvent($this));
+            $this->dispatcher->dispatch(JobEvents::STOP_REQUEST, new JobEvent($this, $data ?: new NullJobData()));
         }
 
         return $this;
@@ -176,12 +177,12 @@ abstract class AbstractJob implements JobInterface
     /**
      * Tick handler for the job.
      */
-    public function tickHandler()
+    public function tickHandler(JobDataInterface $data)
     {
         if (!$this->isRunning()) {
             return;
         }
-        $this->dispatcher->dispatch(JobEvents::TICK, new JobEvent($this));
+        $this->dispatcher->dispatch(JobEvents::TICK, new JobEvent($this, $data));
     }
 
     /**
@@ -210,7 +211,7 @@ abstract class AbstractJob implements JobInterface
     /**
      * The actual run method to implement.
      */
-    abstract protected function doRun(JobDataInterface $data = null);
+    abstract protected function doRun(JobDataInterface $data);
 
     /**
      * Pauses the execution of the job for the given duration.
@@ -239,10 +240,10 @@ abstract class AbstractJob implements JobInterface
      *
      * @return JobInterface
      */
-    private function setup()
+    private function setup(JobDataInterface $data)
     {
         $this->status = static::STATUS_STARTED;
-        register_tick_function(array($this, 'tickHandler'), true);
+        register_tick_function(array($this, 'tickHandler'), $data);
 
         return $this;
     }
@@ -271,14 +272,14 @@ abstract class AbstractJob implements JobInterface
      *
      * @throws Exception The caught exception is forwarded in case it occured.
      */
-    private function doRunOrCleanup(JobDataInterface $data = null, $callback = null)
+    private function doRunOrCleanup(JobDataInterface $data, $callback = null)
     {
         try {
             call_user_func($this->createCallback($callback), $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
             $this->log('error', sprintf('Error while running %s : %s', get_class($this), $e->getMessage()));
-            $this->dispatcher->dispatch(JobEvents::EXCEPTION, new JobExceptionEvent($this, $e));
+            $this->dispatcher->dispatch(JobEvents::EXCEPTION, new JobExceptionEvent($this, $e, $data));
             throw $e;
         }
 
