@@ -48,7 +48,7 @@ class StopSignalSubscriber implements EventSubscriberInterface
         $callback = function ($signal) use ($event, $logger) {
             if ($event->getJob()->isStarted()) {
                 if (null !== $logger) {
-                    $logger->info(sprintf('Caught stop signal `%d`, stopping', $signal));
+                    $logger->notice(sprintf('Caught stop signal `%d` for %s, stopping', $signal, (string) $event->getData()));
                 }
                 $event->getJob()->stop($event->getData());
             }

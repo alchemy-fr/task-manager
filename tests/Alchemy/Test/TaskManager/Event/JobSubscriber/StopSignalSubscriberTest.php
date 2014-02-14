@@ -18,7 +18,7 @@ class StopSignalSubscriberTest extends SubscriberTestCase
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $logger = $this->getMock('Psr\Log\LoggerInterface');
-        $logger->expects($this->once())->method('info');
+        $logger->expects($this->once())->method('notice');
 
         $subscriber = new StopSignalSubscriber(SignalHandler::getInstance(), $logger);
         $subscriber->onJobStart(new JobEvent($job, $this->createDataMock()));

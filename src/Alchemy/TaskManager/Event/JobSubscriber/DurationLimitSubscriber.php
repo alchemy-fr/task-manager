@@ -64,7 +64,7 @@ class DurationLimitSubscriber implements EventSubscriberInterface
 
         if (null !== $this->startTime && (microtime(true) - $this->startTime) > $this->limit) {
             if (null !== $this->logger) {
-                $this->logger->info(sprintf('Max duration reached (%s s.), stopping.', $this->limit));
+                $this->logger->notice(sprintf('Max duration reached for %s (%s s.), stopping.', (string) $event->getData(), $this->limit));
             }
             $event->getJob()->stop($event->getData());
         }

@@ -78,6 +78,6 @@ class StatusOnTickPublisherSubscriber implements EventSubscriberInterface
             $options['port']
         );
 
-        return new StatusOnTickPublisherSubscriber($socket);
+        return new StatusOnTickPublisherSubscriber($socket, new StateFormater());
     }
 }

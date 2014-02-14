@@ -191,10 +191,10 @@ abstract class AbstractJob implements JobInterface
      * @param string $method  A valid LoggerInterface method
      * @param string $message The message to be logged
      */
-    protected function log($method, $message)
+    protected function log($method, $message, array $context = array())
     {
         if (null !== $this->logger) {
-            call_user_func(array($this->logger, $method), $message);
+            call_user_func(array($this->logger, $method), $message, $context);
         }
     }
 
@@ -278,7 +278,7 @@ abstract class AbstractJob implements JobInterface
             call_user_func($this->createCallback($callback), $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
-            $this->log('error', sprintf('Error while running %s : %s', get_class($this), $e->getMessage()));
+            $this->log('error', sprintf('Error while running %s : %s', (string) $data, $e->getMessage()), array('exception' => $e));
             $this->dispatcher->dispatch(JobEvents::EXCEPTION, new JobExceptionEvent($this, $e, $data));
             throw $e;
         }

@@ -50,7 +50,7 @@ class MemoryLimitSubscriber implements EventSubscriberInterface
 
         if (memory_get_usage() > $this->limit) {
             if (null !== $this->logger) {
-                $this->logger->info(sprintf('Max memory reached (%d o.), stopping.', $this->limit));
+                $this->logger->notice(sprintf('Max memory reached for %s (%d o.), stopping.', (string) $event->getData(), $this->limit));
             }
             $event->getJob()->stop($event->getData());
         }

@@ -4,6 +4,7 @@ namespace Alchemy\Test\TaskManager\Event\JobSubscriber;
 
 use Alchemy\TaskManager\Event\JobSubscriber\MemoryLimitSubscriber;
 use Alchemy\TaskManager\Event\JobEvent;
+use Alchemy\TaskManager\Job\MessageJobData;
 
 class MemoryLimitSubscriberTest extends SubscriberTestCase
 {
@@ -29,10 +30,10 @@ class MemoryLimitSubscriberTest extends SubscriberTestCase
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
         $logger = $this->getMock('Psr\Log\LoggerInterface');
-        $logger->expects($this->once())->method('info')->with('Max memory reached (1 o.), stopping.');
+        $logger->expects($this->once())->method('notice')->with('Max memory reached for romain (1 o.), stopping.');
 
         $subscriber = new MemoryLimitSubscriber(1, $logger);
-        $subscriber->onJobTick(new JobEvent($job, $this->createDataMock()));
+        $subscriber->onJobTick(new JobEvent($job, new MessageJobData('romain')));
     }
 
     public function testOnJobTickWithoutLogger()

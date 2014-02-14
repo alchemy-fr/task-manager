@@ -149,6 +149,7 @@ class TaskManager implements LoggerAwareInterface
      */
     public function start()
     {
+        $this->logger->notice("Starting task manager ...");
         $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_START, new TaskManagerEvent($this));
         $this->listener->bind();
 
@@ -179,7 +180,7 @@ class TaskManager implements LoggerAwareInterface
     public function stop($timeout = 10, $signal = null)
     {
         if ($this->manager->isRunning()) {
-            $this->logger->notice("Stopping process manager ...");
+            $this->logger->notice("Stopping task manager ...");
             $this->manager->stop($timeout, $signal);
         }
         if ($this->listener->isBound()) {
