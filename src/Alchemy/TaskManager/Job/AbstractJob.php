@@ -123,7 +123,6 @@ abstract class AbstractJob implements JobInterface
      */
     final public function run(JobDataInterface $data = null, $callback = null)
     {
-        declare(ticks=1);
         $data = $data ?: new NullJobData();
         $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
         $this->setup($data);
@@ -150,7 +149,6 @@ abstract class AbstractJob implements JobInterface
      */
     final public function singleRun(JobDataInterface $data = null, $callback = null)
     {
-        declare(ticks=1);
         $data = $data ?: new NullJobData();
         $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
         $this->setup($data);
