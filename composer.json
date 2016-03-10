@@ -17,12 +17,13 @@
         }
     ],
     "require": {
-        "php"                      : ">=5.3.3",
-        "neutron/process-manager"  : "2.0.x-dev@dev",
-        "neutron/signal-handler"   : "~1.0",
-        "symfony/event-dispatcher" : "~2.0",
-        "symfony/process"          : "~2.4",
-        "ext-zmq"                  : "*"
+        "php": ">=5.3.3",
+        "ext-zmq": "*",
+
+        "neutron/process-manager": "2.0.x-dev@dev",
+        "neutron/signal-handler": "~1.0",
+        "symfony/event-dispatcher": "~2.0",
+        "symfony/process": "~2.4"
     },
     "repositories": [
         {
@@ -31,10 +32,10 @@
         }
     ],
     "require-dev": {
-        "monolog/monolog"          : "~1.0",
-        "phpunit/phpunit"          : "~3.7",
-        "symfony/console"          : "~2.3",
-        "symfony/finder"           : "~2.1"
+        "monolog/monolog": "~1.0",
+        "phpunit/phpunit": "~3.7|^4.0|^5.0",
+        "symfony/console": "~2.3",
+        "symfony/finder": "~2.1"
     },
     "autoload": {
         "psr-0": {
