@@ -34,26 +34,7 @@ class AbstractJobTest extends TestCase
 
     private function getPauseScript()
     {
-        return '<?php
-        require "'.__DIR__.'/../../../../../vendor/autoload.php";
-
-        use Alchemy\TaskManager\Job\JobDataInterface;
-
-        class Job extends Alchemy\TaskManager\Job\AbstractJob
-        {
-            protected function doRun(JobDataInterface $data)
-            {
-            }
-
-            protected function getPauseDuration()
-            {
-                return 2;
-            }
-        }
-
-        $job = new Job();
-        $job->run();
-        ';
+        return $this->createScript('', array(), '', '2');
     }
 
     public function testCustomEventsAreWelcomed()
@@ -91,58 +72,28 @@ class AbstractJobTest extends TestCase
 
     private function getPauseAndLoopScript()
     {
-        return '<?php
-        require "'.__DIR__.'/../../../../../vendor/autoload.php";
-
-        use Alchemy\TaskManager\Job\JobDataInterface;
-
-        class Job extends Alchemy\TaskManager\Job\AbstractJob
-        {
-            protected function doRun(JobDataInterface $data)
-            {
-                echo "loop\n";
-            }
-
-            protected function getPauseDuration()
-            {
-                return 0.1;
-            }
-        }
-
-        $job = new Job();
-        $job->run();
-        ';
+        return $this->createScript('echo "loop\\n";' . PHP_EOL);
     }
 
     private function getEventsScript($throwException)
     {
-        return '<?php
-        require "'.__DIR__.'/../../../../../vendor/autoload.php";
+        $body = $throwException ? 'throw new \Exception("failure");' . PHP_EOL : '';
+        $additionalUses = array(
+            'Alchemy\TaskManager\Event\JobSubscriber\StopSignalSubscriber',
+            'Alchemy\TaskManager\Event\JobEvents',
+            'Neutron\SignalHandler\SignalHandler',
+        );
 
-        use Alchemy\TaskManager\Job\JobDataInterface;
-        use Alchemy\TaskManager\Event\JobEvents;
+        $jobInitializer = <<<EOS
+\$job->addSubscriber(new StopSignalSubscriber(SignalHandler::getInstance()));
+\$job->addListener(JobEvents::START, function () { echo "job-start\\n"; });
+\$job->addListener(JobEvents::TICK, function () { echo "job-tick\\n"; });
+\$job->addListener(JobEvents::STOP, function () { echo "job-stop\\n"; });
+\$job->addListener(JobEvents::EXCEPTION, function () { echo "job-exception\\n"; });
 
-        class Job extends Alchemy\TaskManager\Job\AbstractJob
-        {
-            protected function doRun(JobDataInterface $data)
-            {
-                '.($throwException ? 'throw new \Exception("failure");' : '').'
-            }
+EOS;
 
-            protected function getPauseDuration()
-            {
-                return 0.1;
-            }
-        }
-
-        $job = new Job();
-        $job->addSubscriber(new Alchemy\TaskManager\Event\JobSubscriber\StopSignalSubscriber(Neutron\SignalHandler\SignalHandler::getInstance()));
-        $job->addListener(JobEvents::START, function () { echo "job-start\n"; });
-        $job->addListener(JobEvents::TICK, function () { echo "job-tick\n"; });
-        $job->addListener(JobEvents::STOP, function () { echo "job-stop\n"; });
-        $job->addListener(JobEvents::EXCEPTION, function () { echo "job-exception\n"; });
-        $job->run();
-        ';
+        return $this->createScript($body, $additionalUses, $jobInitializer);
     }
 
     public function testPauseDoesAPause()
@@ -169,6 +120,7 @@ class AbstractJobTest extends TestCase
         $process->stop();
         $this->assertFalse($process->isRunning());
         $data = array_filter(explode("\n", $process->getOutput()));
+        $this->assertGreaterThanOrEqual(3, count($data), 'Expected more events');
         $this->assertSame(JobEvents::START, $data[0]);
         $this->assertSame(JobEvents::TICK, $data[1]);
         $this->assertContains(JobEvents::STOP, $data);
@@ -320,6 +272,55 @@ class AbstractJobTest extends TestCase
         $job = new JobFailureTest();
         $this->setExpectedException('Alchemy\Test\TaskManager\Job\JobFailureException', 'Total failure.');
         $job->run();
+    }
+
+    /**
+     * @param string $doRunBody
+     * @param string[] $additionalUses
+     * @param string $jobInitializer
+     * @param string $pauseDuration
+     * @return string
+     */
+    private function createScript($doRunBody = '', array $additionalUses = array(), $jobInitializer = '', $pauseDuration = '0.1')
+    {
+        $path = realpath(__DIR__ . '/../../../../../vendor/autoload.php');
+
+        $createUseClosure = function ($useClause) {
+            return sprintf("use %s;\n", $useClause);
+        };
+
+        $additionalUses[] = 'Alchemy\TaskManager\Job\JobDataInterface';
+        $additionalUses = array_unique($additionalUses);
+        sort($additionalUses);
+
+        $useClauses = implode('', array_map($createUseClosure, $additionalUses));
+
+        return <<<EOS
+<?php
+
+declare(ticks=1);
+
+require "$path";
+
+$useClauses
+class Job extends Alchemy\TaskManager\Job\AbstractJob
+{
+    protected function doRun(JobDataInterface \$data)
+    {
+$doRunBody
+    }
+
+    protected function getPauseDuration()
+    {
+        return $pauseDuration;
+    }
+}
+
+\$job = new Job();
+$jobInitializer
+\$job->run();
+
+EOS;
     }
 }
 
