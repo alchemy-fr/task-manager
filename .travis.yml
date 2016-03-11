@@ -2,6 +2,10 @@ language: php
 
 sudo: false
 
+cache:
+  directories:
+    - $HOME/.composer
+
 php:
   - '5.3'
   - '5.4'
@@ -18,7 +22,7 @@ before_script:
   - phpenv config-rm xdebug.ini
   - echo "extension=zmq.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
   - composer self-update
-  - composer install --prefer-source
+  - composer install
 
 script:
   - vendor/bin/phpunit -c phpunit.xml.dist
