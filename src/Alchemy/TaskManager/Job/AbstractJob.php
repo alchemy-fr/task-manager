@@ -123,16 +123,14 @@ abstract class AbstractJob implements JobInterface
      */
     final public function run(JobDataInterface $data = null, $callback = null)
     {
-        $data = $data ?: new NullJobData();
-        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
-        $this->setup($data);
+        $this->prepareRun($callback, $data);
         while (static::STATUS_STARTED === $this->status) {
             $this->doRunOrCleanup($data, $callback);
             $this->pause($this->getPauseDuration());
         }
-        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this, $data));
+        $this->cleanRun($data);
 
-        return $this->cleanup();
+        return $this;
     }
 
     /**
@@ -149,12 +147,9 @@ abstract class AbstractJob implements JobInterface
      */
     final public function singleRun(JobDataInterface $data = null, $callback = null)
     {
-        $data = $data ?: new NullJobData();
-        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
-        $this->setup($data);
+        $this->prepareRun($callback, $data);
         $this->doRunOrCleanup($data, $callback);
-        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this, $data));
-        $this->cleanup();
+        $this->cleanRun($data);
 
         return $this;
     }
@@ -264,16 +259,16 @@ abstract class AbstractJob implements JobInterface
      * and forward the exception.
      *
      * @param JobDataInterface $data     The data to pass to the doRun method.
-     * @param null|callable    $callback A callback
+     * @param callable    $callback A callback
      *
      * @return JobInterface
      *
-     * @throws Exception The caught exception is forwarded in case it occured.
+     * @throws \Exception The caught exception is forwarded in case it occured.
      */
-    private function doRunOrCleanup(JobDataInterface $data, $callback = null)
+    private function doRunOrCleanup(JobDataInterface $data, $callback)
     {
         try {
-            call_user_func($this->createCallback($callback), $this, $this->doRun($data));
+            call_user_func($callback, $this, $this->doRun($data));
         } catch (\Exception $e) {
             $this->cleanup();
             $this->log('error', sprintf('Error while running %s : %s', (string) $data, $e->getMessage()), array('exception' => $e));
@@ -298,5 +293,27 @@ abstract class AbstractJob implements JobInterface
         }
 
         return function () {};
+    }
+
+    /**
+     * @param null|callable $callback
+     * @param null|JobDataInterface $data
+     */
+    private function prepareRun(&$callback, JobDataInterface &$data = null)
+    {
+        $data = $data ?: new NullJobData();
+        $callback = $this->createCallback($callback);
+
+        $this->dispatcher->dispatch(JobEvents::START, new JobEvent($this, $data));
+        $this->setup($data);
+    }
+
+    /**
+     * @param JobDataInterface $data
+     */
+    private function cleanRun(JobDataInterface $data)
+    {
+        $this->dispatcher->dispatch(JobEvents::STOP, new JobEvent($this, $data));
+        $this->cleanup();
     }
 }
