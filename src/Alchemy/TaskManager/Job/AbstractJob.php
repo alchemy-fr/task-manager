@@ -1,4 +1,5 @@
 <?php
+declare(ticks=1);
 
 /*
  * This file is part of Alchemy Task Manager
@@ -217,10 +218,7 @@ abstract class AbstractJob implements JobInterface
     {
         $time = microtime(true) + $duration;
 
-        while (microtime(true) < $time) {
-            if (static::STATUS_STARTED !== $this->status) {
-                return $this;
-            }
+        while (microtime(true) < $time && static::STATUS_STARTED === $this->status) {
             // 50 ms is a good compromise between performance and reactivity
             usleep(50000);
         }
