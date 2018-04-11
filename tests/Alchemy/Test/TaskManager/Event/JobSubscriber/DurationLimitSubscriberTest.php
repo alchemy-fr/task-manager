@@ -39,7 +39,7 @@ class DurationLimitSubscriberTest extends SubscriberTestCase
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $logger = $this->getMock('Psr\Log\LoggerInterface');
+        $logger = $this->createMock('Psr\Log\LoggerInterface');
         $logger->expects($this->once())->method('notice')->with('Max duration reached for romain (0.1 s.), stopping.');
 
         $subscriber = new DurationLimitSubscriber(0.1, $logger);

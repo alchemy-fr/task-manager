@@ -29,7 +29,10 @@ class LockFileTest extends TestCase
         $this->assertFileExists($this->lockfile);
 
         $lock2 = new LockFile($this->lockfile);
-        $this->setExpectedException('Alchemy\TaskManager\Exception\LockFailureException', sprintf('Unable to lock %s.', $this->lockfile));
+
+        $this->expectException('Alchemy\TaskManager\Exception\LockFailureException');
+        $this->expectExceptionMessage(sprintf('Unable to lock %s.', $this->lockfile));
+
         $lock2->lock();
     }
 

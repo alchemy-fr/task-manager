@@ -13,7 +13,7 @@ class TaskManagerTest extends TestCase
 {
     public function testThatItRunsWithoutAnyProcesses()
     {
-        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList = $this->createMock('Alchemy\TaskManager\TaskListInterface');
         $taskList->expects($this->once())
             ->method('refresh')
             ->will($this->returnValue(array()));
@@ -166,9 +166,10 @@ class TaskManagerTest extends TestCase
         $socket = new ZMQSocket(new \ZMQContext(), \ZMQ::SOCKET_REP, 'tcp', '127.0.0.1', 6660);
         $socket->bind();
 
-        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList = $this->createMock('Alchemy\TaskManager\TaskListInterface');
         $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
-        $this->setExpectedException('Alchemy\TaskManager\Exception\RuntimeException', 'Unable to bind socket to tcp://127.0.0.1:6660. Is another one already bound ?');
+        $this->expectException('Alchemy\TaskManager\Exception\RuntimeException');
+        $this->expectExceptionMessage('Unable to bind socket to tcp://127.0.0.1:6660. Is another one already bound ?');
         $manager->start();
     }
 
@@ -207,7 +208,7 @@ class TaskManagerTest extends TestCase
 
     public function testThatCallingStopTriggersAStopRequestEvent()
     {
-        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList = $this->createMock('Alchemy\TaskManager\TaskListInterface');
         $taskList->expects($this->any())
             ->method('refresh')
             ->will($this->returnValue(array()));
@@ -228,7 +229,7 @@ class TaskManagerTest extends TestCase
 
     public function testThatRefreshIsCalledAsManyTimestheUpdateIsRequested()
     {
-        $taskList = $this->getMock('Alchemy\TaskManager\TaskListInterface');
+        $taskList = $this->createMock('Alchemy\TaskManager\TaskListInterface');
         $taskList->expects($this->exactly(7))
             ->method('refresh')
             ->will($this->returnValue(array()));
@@ -265,7 +266,7 @@ class TaskManagerTest extends TestCase
 
     private function createLoggerMock()
     {
-        return $this->getMock('Psr\Log\LoggerInterface');
+        return $this->createMock('Psr\Log\LoggerInterface');
     }
 
     private function getTaskListImplementation()

@@ -13,7 +13,8 @@ class LockFileSubscriberTest extends SubscriberTestCase
      */
     public function testWithInvalidParams($id, $directory, $message)
     {
-        $this->setExpectedException('Alchemy\TaskManager\Exception\InvalidArgumentException', $message);
+        $this->expectException('Alchemy\TaskManager\Exception\InvalidArgumentException');
+        $this->expectExceptionMessage($message);
         new LockFileSubscriber($id, null, $directory);
     }
 

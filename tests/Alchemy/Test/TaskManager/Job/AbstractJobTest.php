@@ -143,7 +143,7 @@ EOS;
 
     public function testLoggerGettersAndSetters()
     {
-        $logger = $this->getMock('Psr\Log\LoggerInterface');
+        $logger = $this->createMock('Psr\Log\LoggerInterface');
 
         $job = new JobTest();
         $this->assertSame(null, $job->getLogger());
@@ -176,7 +176,7 @@ EOS;
 
     public function testAddAListener()
     {
-        $dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
+        $dispatcher = $this->createMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
         $listener = array($this, 'testAddAListener');
         $name = 'event-name';
 
@@ -190,8 +190,8 @@ EOS;
 
     public function testAddASubscriber()
     {
-        $dispatcher = $this->getMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
-        $subscriber = $this->getMock('Symfony\Component\EventDispatcher\EventSubscriberInterface');
+        $dispatcher = $this->createMock('Symfony\Component\EventDispatcher\EventDispatcherInterface');
+        $subscriber = $this->createMock('Symfony\Component\EventDispatcher\EventSubscriberInterface');
 
         $dispatcher->expects($this->once())
                 ->method('addSubscriber')
@@ -270,7 +270,8 @@ EOS;
 
         }
         $job = new JobFailureTest();
-        $this->setExpectedException('Alchemy\Test\TaskManager\Job\JobFailureException', 'Total failure.');
+        $this->expectException('Alchemy\Test\TaskManager\Job\JobFailureException');
+        $this->expectExceptionMessage('Total failure.');
         $job->run();
     }
 

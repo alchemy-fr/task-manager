@@ -40,7 +40,7 @@ class SignalControlledSubscriberTest extends SubscriberTestCase
         $job->expects($this->once())->method('stop');
         $job->expects($this->any())->method('isStarted')->will($this->returnValue(true));
 
-        $logger = $this->getMock('Psr\Log\LoggerInterface');
+        $logger = $this->createMock('Psr\Log\LoggerInterface');
         $logger->expects($this->once())->method('notice')->with('No signal received for romain since start-time (max period is 0.15 s.), stopping.');
 
         $subscriber = new SignalControlledSubscriber(SignalHandler::getInstance(), 0.15, $logger);
