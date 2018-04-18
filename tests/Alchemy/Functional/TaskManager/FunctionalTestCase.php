@@ -3,8 +3,9 @@
 namespace Alchemy\Functional\TaskManager;
 
 use Symfony\Component\Finder\Finder;
+use \PHPUnit\Framework\TestCase;
 
-class FunctionalTestCase extends \PHPUnit_Framework_TestCase
+class FunctionalTestCase extends TestCase
 {
     protected $lockDir;
 
