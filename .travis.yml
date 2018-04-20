@@ -19,6 +19,7 @@ matrix:
 before_script:
   - phpenv config-rm xdebug.ini
   - sudo apt-get install php-pear -y
+  - sudo apt-get install libzmq-dev -y
   - yes '' | sudo pecl install zmq-beta
   - echo "extension=zmq.so" >> `php --ini | grep "Loaded Configuration" | sed -e "s|.*:\s*||"`
   - composer self-update
