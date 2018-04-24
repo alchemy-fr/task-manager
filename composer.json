@@ -20,7 +20,7 @@
         "php": "~7.0",
         "ext-zmq": "*",
 
-        "neutron/process-manager": "2.0.x-dev@dev",
+        "neutron/process-manager": "~4.1",
         "neutron/signal-handler": "~1.0",
         "symfony/event-dispatcher": "~2.0",
         "symfony/process": "~2.4"
@@ -28,7 +28,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/romainneutron/ProcessManager"
+            "url": "https://github.com/alchemy-fr/ProcessManager"
         }
     ],
     "require-dev": {
