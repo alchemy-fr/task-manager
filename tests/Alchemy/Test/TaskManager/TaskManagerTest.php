@@ -18,7 +18,6 @@ class TaskManagerTest extends TestCase
             ->method('refresh')
             ->will($this->returnValue(array()));
         $manager = TaskManager::create(new EventDispatcher(), $this->createLoggerMock(), $taskList);
-        declare(ticks=1);
         pcntl_alarm(1);
         pcntl_signal(SIGALRM, function () use ($manager) { $manager->stop(); });
         $start = microtime(true);
