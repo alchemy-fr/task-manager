@@ -32,6 +32,7 @@ class StateFormaterTest extends TestCase
 
         $managed1 = $this->getMockBuilder('Neutron\ProcessManager\ManagedProcess')
                 ->disableOriginalConstructor()
+                ->disableOriginalClone()
                 ->getMock();
         $managed1->expects($this->any())
                 ->method('getManagedProcess')
@@ -42,6 +43,7 @@ class StateFormaterTest extends TestCase
 
         $managed2 = $this->getMockBuilder('Neutron\ProcessManager\ManagedProcess')
                 ->disableOriginalConstructor()
+                ->disableOriginalClone()
                 ->getMock();
         $managed2->expects($this->any())
                 ->method('getManagedProcess')

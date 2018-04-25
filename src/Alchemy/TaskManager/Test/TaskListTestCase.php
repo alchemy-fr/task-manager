@@ -3,8 +3,9 @@
 namespace Alchemy\TaskManager\Test;
 
 use Alchemy\TaskManager\TaskListInterface;
+use \PHPUnit\Framework\TestCase;
 
-abstract class TaskListTestCase extends \PHPUnit_Framework_TestCase
+abstract class TaskListTestCase extends TestCase
 {
     public function testThatRefreshReturnsAnArrayOfTaskInterface()
     {

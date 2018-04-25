@@ -3,8 +3,9 @@
 namespace Alchemy\TaskManager\Test;
 
 use Alchemy\TaskManager\TaskInterface;
+use \PHPUnit\Framework\TestCase;
 
-abstract class TaskTestCase extends \PHPUnit\Framework\TestCase
+abstract class TaskTestCase extends TestCase
 {
     public function testThatCreateProcessReturnsAProcessableInterface()
     {

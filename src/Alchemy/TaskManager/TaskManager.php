@@ -164,6 +164,7 @@ class TaskManager implements LoggerAwareInterface
             $this->dispatcher->dispatch(TaskManagerEvents::MANAGER_TICK, new TaskManagerEvent($this));
             // sleep at list 10ms, at max 100ms
             usleep(max($this->options['tick_period'] - (microtime(true) - $start), 0.01) * 1E6);
+            pcntl_signal_dispatch();
         }
 
         return $this;
